@@ -1,0 +1,61 @@
+services:
+  # --------------------------------------------------------------------------------
+  # 1. MinIO Service (Object Storage)
+  #    - Runs the official MinIO image.
+  #    - Uses a Persistent Disk to store files safely.
+  # --------------------------------------------------------------------------------
+  - type: pserv
+    name: brainypdf-minio
+    image: minio/minio:latest
+    plan: free # Note: Private Services might require paid plan on Render, or use Starter.
+    env: docker
+    disk:
+      name: minio-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: MINIO_ROOT_USER
+        value: minioadmin # Change this in Render Dashboard after deploy!
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+    startCommand: server /data --console-address ":9001"
+    
+  # --------------------------------------------------------------------------------
+  # 2. Backend API Service
+  #    - Builds your custom Go backend (with Tesseract/LibreOffice bundled).
+  # --------------------------------------------------------------------------------
+  - type: web
+    name: brainypdf-backend
+    env: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: MINIO_ENDPOINT
+        fromService:
+          type: pserv
+          name: brainypdf-minio
+          property: host
+      - key: MINIO_BUCKET_TEMP
+        value: temp
+      - key: MINIO_BUCKET_USER_FILES
+        value: uploads
+      - key: MINIO_ACCESS_KEY
+        fromService:
+          type: pserv
+          name: brainypdf-minio
+          envVarKey: MINIO_ROOT_USER
+      - key: MINIO_SECRET_KEY
+        fromService:
+          type: pserv
+          name: brainypdf-minio
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: MINIO_USE_SSL
+        value: false
+      - key: MONGODB_URI
+        sync: false # User must provide this in Dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false # User must provide this in Dashboard

@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+bin/
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+firebase-credentials.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+*.cover
+*.out
+
+# Temporary files
+tmp/
+*.tmp
+
+# Docker volumes (if local)
+data/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+
+# Frontend
+.turbo
+.vercel
