@@ -22,6 +22,10 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.Load()
+	
+	log.Printf("🚀 Starting Server...")
+	log.Printf("DEBUG: Loaded CORS Allowed Origins: %v", cfg.CORSAllowedOrigins)
+
 
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
