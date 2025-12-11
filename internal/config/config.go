@@ -90,10 +90,14 @@ func Load() *Config {
 		TempFileTTLHours: getEnvInt("TEMP_FILE_TTL_HOURS", 2),
 
 		// CORS
-		CORSAllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
+	}
+	
+	// CORS - Robust parsing with trimming
+	rawOrigins := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+	config.CORSAllowedOrigins = parseCORSOrigins(rawOrigins)
 
-		// Share links - should point to frontend for /s/[code] route
-		ServerHost: getEnv("SERVER_HOST", "http://localhost:3000"),
+	// Share links - should point to frontend for /s/[code] route
+	config.ServerHost: getEnv("SERVER_HOST", "http://localhost:3000"),
 	}
 
     // Fix common misconfiguration where SERVER_HOST is set to backend port
@@ -107,6 +111,18 @@ func Load() *Config {
 }
 
 // Helper functions
+func parseCORSOrigins(raw string) []string {
+	parts := strings.Split(raw, ",")
+	var cleaned []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			cleaned = append(cleaned, trimmed)
+		}
+	}
+	return cleaned
+}
+
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
