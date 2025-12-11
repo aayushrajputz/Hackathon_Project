@@ -171,10 +171,12 @@ func (h *ShareHandler) GetShare(c *gin.Context) {
 	var downloadURL string
 
 	// Unified download URL pointing to our backend endpoint
-	// This ensures we can control Content-Disposition and streaming
-	// Since h.serverHost is the frontend (localhost:3000), we need the backend host (localhost:8080) for API
-	// TODO: Make backend host configurable. For now, we assume local dev.
-	downloadURL = fmt.Sprintf("http://localhost:8080/api/v1/share/download/%s", code)
+	// Use the current request's host to construct the download URL dynamically
+	scheme := "http"
+	if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	downloadURL = fmt.Sprintf("%s://%s/api/v1/share/download/%s", scheme, c.Request.Host, code)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
