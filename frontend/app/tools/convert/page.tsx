@@ -189,7 +189,7 @@ export default function ConvertPage() {
                     // Auto-fetch blob for preview if it's a PDF output
                     if (selectedCard?.outputFormat === 'pdf') {
                         try {
-                            const dlRes = await api.get(`/convert/download/${newJobId || jobId}`, { responseType: 'blob' });
+                            const dlRes = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
                             const url = window.URL.createObjectURL(new Blob([dlRes.data]));
                             setPreviewUrl(url);
                         } catch (e) {
