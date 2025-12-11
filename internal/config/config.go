@@ -97,7 +97,7 @@ func Load() *Config {
 	config.CORSAllowedOrigins = parseCORSOrigins(rawOrigins)
 
 	// Share links - should point to frontend for /s/[code] route
-	config.ServerHost: getEnv("SERVER_HOST", "http://localhost:3000"),
+	config.ServerHost = getEnv("SERVER_HOST", "http://localhost:3000"),
 	}
 
     // Fix common misconfiguration where SERVER_HOST is set to backend port
