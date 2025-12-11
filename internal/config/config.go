@@ -53,7 +53,13 @@ func Load() *Config {
 	cwd, _ := os.Getwd()
 	log.Printf("Current working directory: %s", cwd)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("No .env file found or error loading it: %v", err)
+		log.Printf("No .env file found in root. Checking /etc/secrets/.env...")
+		// Fallback for Render Secret Files
+		if err := godotenv.Load("/etc/secrets/.env"); err != nil {
+			log.Printf("No .env file found in /etc/secrets/ or error loading it: %v", err)
+		} else {
+			log.Println("Successfully loaded .env from /etc/secrets/")
+		}
 	}
 
 	config := &Config{
