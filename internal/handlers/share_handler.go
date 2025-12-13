@@ -26,14 +26,16 @@ type ShareHandler struct {
 	db                *mongo.Database
 	serverHost        string // e.g., "http://localhost:3000"
 	notificationService *services.NotificationService
+	conversionService   *services.ConversionService
 }
 
-func NewShareHandler(minioClient *minioPkg.Client, mongoClient *mongo.Client, dbName, serverHost string, notifService *services.NotificationService) *ShareHandler {
+func NewShareHandler(minioClient *minioPkg.Client, mongoClient *mongo.Client, dbName, serverHost string, notifService *services.NotificationService, conversionService *services.ConversionService) *ShareHandler {
 	return &ShareHandler{
 		minioClient:         minioClient,
 		db:                  mongoClient.Database(dbName),
 		serverHost:          serverHost,
 		notificationService: notifService,
+		conversionService:   conversionService,
 	}
 }
 
@@ -235,13 +237,27 @@ func (h *ShareHandler) Download(c *gin.Context) {
 		}
 	}()
 
-	// Fetch actual document record to get MinIO path
-	var doc models.Document
+	// Check if FileID is a valid ObjectID (MongoDB document)
+	// If not, it might be a Conversion Job ID (UUID)
 	objID, err := primitive.ObjectIDFromHex(share.FileID)
 	if err != nil {
+		// Not an ObjectID, check conversion service
+		if h.conversionService != nil {
+			path, filename, err := h.conversionService.GetResultPath(share.FileID)
+			if err == nil {
+				// Serve local file
+				c.FileAttachment(path, filename)
+				return
+			}
+		}
+
+		// Fallback: Invalid ID and not a conversion job
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid file ID"})
 		return
 	}
+
+	// Fetch actual document record to get MinIO path
+	var doc models.Document
 
 	err = h.db.Collection("documents").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&doc)
 	if err != nil {

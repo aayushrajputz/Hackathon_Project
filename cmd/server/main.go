@@ -87,7 +87,7 @@ func main() {
 	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, mongoClient)
 	libraryHandler := handlers.NewLibraryHandler(minioClient, mongoClient, pdfService, userService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService) // Initialize NotificationHandler
-	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService) // Pass notificationService
+	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService) // Pass notificationService and conversionService
 	conversionHandler := handlers.NewConversionHandler(conversionService)
 
 
