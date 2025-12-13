@@ -57,38 +57,36 @@ func main() {
 		log.Println("Authentication will not work without Firebase credentials")
 	}
 
-	// Initialize services
+	// Services
 	pdfService, err := services.NewPDFService()
 	if err != nil {
 		log.Fatalf("Failed to create PDF service: %v", err)
 	}
-
-	// Legacy AI Service (kept for compilation, though unused in PDF tools)
 	aiService, err := services.NewAIService(context.Background(), cfg.OpenRouterAPIKey)
 	if err != nil {
-		log.Printf("Warning: AI service not fully configured: %v", err)
+		log.Printf("Warning: Failed to initialize AI service: %v", err)
 	}
-
+	notificationService := services.NewNotificationService(mongoClient) // Correct signature
 	userService := services.NewUserService(mongoClient)
-	notificationService := services.NewNotificationService(mongoClient) // Initialize NotificationService
-	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
-
-	// Initialize conversion service (4 workers for concurrent conversions)
-	conversionService, err := services.NewConversionService(4)
+	conversionService, err := services.NewConversionService(4) // Correct signature
 	if err != nil {
 		log.Printf("Warning: Conversion service not available: %v", err)
 	}
 
-	// Initialize handlers
+	// Handlers
+	authHandler := handlers.NewAuthHandler(userService, firebaseClient) // Assuming firebaseClient is authClient
+	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
+	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, mongoClient) // Original corePDFHandler
+	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService) // Original aiHandler
+	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService)
+	conversionHandler := handlers.NewConversionHandler(conversionService) // Original conversionHandler
+	paymentHandler := handlers.NewPaymentHandler(cfg, userService, notificationService)
+	
+	// Original handlers that were not explicitly in the provided snippet but are needed
 	pdfHandler := handlers.NewPDFHandler(pdfService, storageService)
-	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService)
 	storageHandler := handlers.NewStorageHandler(storageService)
-	authHandler := handlers.NewAuthHandler(userService, firebaseClient)
-	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, mongoClient)
 	libraryHandler := handlers.NewLibraryHandler(minioClient, mongoClient, pdfService, userService)
-	notificationHandler := handlers.NewNotificationHandler(notificationService) // Initialize NotificationHandler
-	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService) // Pass notificationService and conversionService
-	conversionHandler := handlers.NewConversionHandler(conversionService)
+	notificationHandler := handlers.NewNotificationHandler(notificationService, userService)
 
 
 	// Create Gin router
@@ -132,7 +130,8 @@ func main() {
 		log.Println("📤 Registering Share routes...")
 		shareHandler.RegisterRoutes(v1, authMiddleware)
 		conversionHandler.RegisterRoutes(v1)
-		notificationHandler.RegisterRoutes(v1) // Register notification routes
+		notificationHandler.RegisterRoutes(v1, authMiddleware) // Register notification routes with auth
+		paymentHandler.RegisterRoutes(v1, authMiddleware)
 	}
 
 	// API routes (Phase 3 - /api/pdf/*)

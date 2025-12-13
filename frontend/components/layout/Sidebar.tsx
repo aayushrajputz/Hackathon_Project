@@ -28,6 +28,7 @@ import {
     X,
     ChevronDown,
     MessageSquare,
+    CreditCard,
 } from 'lucide-react';
 import clsx from 'clsx';
 import Image from 'next/image';
@@ -237,6 +238,16 @@ export default function Sidebar() {
                                         </div>
                                     )}
                                 </div>
+                                <Link
+                                    href="/pricing"
+                                    className={clsx(
+                                        'sidebar-link',
+                                        pathname === '/pricing' && 'sidebar-link-active'
+                                    )}
+                                >
+                                    <CreditCard className="w-5 h-5" />
+                                    Upgrade to Pro
+                                </Link>
 
                                 <div className="flex gap-2">
                                     <Link

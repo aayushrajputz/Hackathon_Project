@@ -42,6 +42,10 @@ type Config struct {
 
 	// Share links
 	ServerHost string
+
+	// Razorpay
+	RazorpayKeyID     string
+	RazorpayKeySecret string
 }
 
 // Global config instance
@@ -91,20 +95,23 @@ func Load() *Config {
 
 		// CORS
 	}
-	
+
 	// CORS - Robust parsing with trimming
 	rawOrigins := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 	config.CORSAllowedOrigins = parseCORSOrigins(rawOrigins)
 
-	// Share links - should point to frontend for /s/[code] route
+	// Razorpay
+	config.RazorpayKeyID = getEnv("RAZORPAY_KEY_ID", "")
+	config.RazorpayKeySecret = getEnv("RAZORPAY_KEY_SECRET", "")
+
 	// Share links - should point to frontend for /s/[code] route
 	config.ServerHost = getEnv("SERVER_HOST", "http://localhost:3000")
 
-    // Fix common misconfiguration where SERVER_HOST is set to backend port
-    if strings.Contains(config.ServerHost, ":8080") && config.Port == "8080" {
-        log.Println("Warning: SERVER_HOST points to backend port 8080. Redirecting to 3000 for correct frontend sharing links.")
-        config.ServerHost = strings.Replace(config.ServerHost, ":8080", ":3000", 1)
-    }
+	// Fix common misconfiguration where SERVER_HOST is set to backend port
+	if strings.Contains(config.ServerHost, ":8080") && config.Port == "8080" {
+		log.Println("Warning: SERVER_HOST points to backend port 8080. Redirecting to 3000 for correct frontend sharing links.")
+		config.ServerHost = strings.Replace(config.ServerHost, ":8080", ":3000", 1)
+	}
 
 	AppConfig = config
 	return config

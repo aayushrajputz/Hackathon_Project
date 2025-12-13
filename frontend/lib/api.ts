@@ -1,8 +1,16 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/v1`
-    : 'http://localhost:8080/api/v1';
+const getBaseUrl = () => {
+    let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+    if (!url.endsWith('/api/v1')) {
+        url += '/api/v1';
+    }
+    return url;
+};
+const API_URL = getBaseUrl();
 
 export const api = axios.create({
     baseURL: API_URL,
@@ -269,6 +277,11 @@ export const shareApi = {
     create: (fileId: string, fileType: string, expiresIn: number) =>
         api.post<ApiResponse<any>>('/share', { fileId, fileType, expiresIn }),
     get: (code: string) => api.get<ApiResponse<any>>(`/share/${code}`),
+};
+
+export const paymentApi = {
+    createOrder: (plan: string) => api.post<ApiResponse<any>>('/payment/order', { plan }),
+    verifyPayment: (data: any) => api.post<ApiResponse<any>>('/payment/verify', data),
 };
 
 export default api;
