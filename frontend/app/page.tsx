@@ -213,7 +213,7 @@ export default function HomePage() {
                             <span className="font-semibold">BrainyPDF</span>
                         </div>
                         <p className="text-gray-500 text-sm">
-                            © 2024 BrainyPDF. All rights reserved.
+                            © 2025 BrainyPDF. All rights reserved.
                         </p>
                     </div>
                 </div>

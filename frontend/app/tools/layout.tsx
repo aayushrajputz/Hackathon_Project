@@ -65,7 +65,7 @@ export default function ToolsLayout({
             {/* Footer */}
             <footer className="border-t border-gray-200 dark:border-slate-700 py-6">
                 <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-                    © 2024 BrainyPDF. All tools are free to use.
+                    © 2025 BrainyPDF. All tools are free to use.
                 </div>
             </footer>
         </div>
