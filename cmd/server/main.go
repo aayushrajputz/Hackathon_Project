@@ -178,7 +178,7 @@ func main() {
 	}()
 
 	// Start server
-	log.Printf("🚀 BrainyPDF API server starting on port %s", cfg.Port)
+	log.Printf("🚀 BinaryPDF API server starting on port %s", cfg.Port)
 	log.Printf("📄 API documentation available at http://localhost:%s/health", cfg.Port)
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

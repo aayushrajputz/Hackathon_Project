@@ -168,3 +168,21 @@ func GenerateUniqueFilename(originalName string) string {
 	ext := filepath.Ext(originalName)
 	return fmt.Sprintf("%s%s", uuid.New().String(), ext)
 }
+
+// ListObjects lists objects in a bucket with a prefix (for debugging)
+func (c *Client) ListObjects(ctx context.Context, bucket, prefix string) ([]string, error) {
+    var objects []string
+    opts := minio.ListObjectsOptions{
+        Prefix: prefix,
+        Recursive: true,
+        MaxKeys: 10, // Limit to 10 for debug
+    }
+    
+    for object := range c.client.ListObjects(ctx, bucket, opts) {
+        if object.Err != nil {
+            return nil, object.Err
+        }
+        objects = append(objects, object.Key)
+    }
+    return objects, nil
+}

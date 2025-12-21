@@ -64,7 +64,7 @@ type AIService struct {
 
 // NewAIService creates a new AI service with OpenRouter
 func NewAIService(ctx context.Context, openRouterAPIKey string) (*AIService, error) {
-	tempDir := filepath.Join(os.TempDir(), "brainypdf-ai")
+	tempDir := filepath.Join(os.TempDir(), "binarypdf-ai")
 	os.MkdirAll(tempDir, 0755)
 
 	if openRouterAPIKey == "" {
@@ -125,8 +125,8 @@ func (s *AIService) callOpenRouter(ctx context.Context, prompt string) (string, 
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+s.apiKey)
-		req.Header.Set("HTTP-Referer", "https://brainypdf.com")
-		req.Header.Set("X-Title", "BrainyPDF")
+		req.Header.Set("HTTP-Referer", "https://binarypdf.com")
+		req.Header.Set("X-Title", "BinaryPDF")
 
 		log.Printf("[AI] Calling OpenRouter with model: %s (attempt %d)", OpenRouterModel, attempt+1)
 
@@ -387,8 +387,8 @@ Context:
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+s.apiKey)
-		req.Header.Set("HTTP-Referer", "https://brainypdf.com")
-		req.Header.Set("X-Title", "BrainyPDF")
+		req.Header.Set("HTTP-Referer", "https://binarypdf.com")
+		req.Header.Set("X-Title", "BinaryPDF")
 
 		log.Printf("[AI] Calling OpenRouter Chat with model: %s (attempt %d)", OpenRouterModel, attempt+1)
 

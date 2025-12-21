@@ -73,7 +73,7 @@ func Load() *Config {
 
 		// MongoDB
 		MongoDBURI:      getEnv("MONGODB_URI", "mongodb://localhost:27017"),
-		MongoDBDatabase: getEnv("MONGODB_DATABASE", "brainypdf"),
+		MongoDBDatabase: getEnv("MONGODB_DATABASE", "binarypdf"),
 
 		// MinIO
 		MinIOEndpoint:        getEnv("MINIO_ENDPOINT", "localhost:9000"),

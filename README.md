@@ -1,4 +1,4 @@
-# BrainyPDF - AI-Powered PDF Toolkit
+# BinaryPDF - AI-Powered PDF Toolkit
 
 A full-featured PDF toolkit with AI capabilities built with Go, Next.js, MongoDB, and MinIO.
 
@@ -26,7 +26,7 @@ A full-featured PDF toolkit with AI capabilities built with Go, Next.js, MongoDB
 ## 🏗️ Architecture
 
 ```
-brainypdf/
+binarypdf/
 ├── cmd/server/main.go       # Application entry point
 ├── internal/
 │   ├── config/              # Configuration
@@ -67,7 +67,7 @@ brainypdf/
 
 ```bash
 # Clone the repository
-cd brainypdf
+cd binarypdf
 
 # Copy environment template
 cp .env.example .env

@@ -14,26 +14,23 @@ import {
     Trash2,
     ArrowRight,
     Share2,
-    Copy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
-import { api, shareApi } from '@/lib/api';
+import { api } from '@/lib/api';
+import clsx from 'clsx';
+import ShareModal from '@/components/ui/ShareModal';
 
 interface FileWithId {
     id: string;
     file: File;
 }
 
-import ShareModal from '@/components/ui/ShareModal';
-
 export default function MergePDFPage() {
     const [files, setFiles] = useState<FileWithId[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<any>(null);
-    const [shareModalOpen, setShareModalOpen] = useState(false); // New state
-
-    // ... (rest of the code same as before until handleShare) ...
+    const [shareModalOpen, setShareModalOpen] = useState(false);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const newFiles = acceptedFiles.map(file => ({
@@ -41,9 +38,10 @@ export default function MergePDFPage() {
             file
         }));
         setFiles(prev => [...prev, ...newFiles]);
+        setResult(null);
     }, []);
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps } = useDropzone({
         onDrop,
         accept: {
             'application/pdf': ['.pdf'],
@@ -89,7 +87,6 @@ export default function MergePDFPage() {
     const handleDownload = async () => {
         if (result?.fileId) {
             try {
-                // Fetch as blob from backend proxy to avoid CORS
                 const response = await api.get(`/library/download/${result.fileId}`, {
                     responseType: 'blob',
                 });
@@ -108,14 +105,6 @@ export default function MergePDFPage() {
                 console.error(error);
                 toast.error('Failed to download file');
             }
-        } else if (result?.url) {
-            // Fallback
-            const link = document.createElement('a');
-            link.href = result.url;
-            link.download = result.filename || 'merged.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
     };
 
@@ -128,245 +117,268 @@ export default function MergePDFPage() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4">
-                    <Merge className="w-8 h-8 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    Merge PDF Files
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Combine multiple PDF files into a single document
-                </p>
-            </div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-40"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
 
-            {/* Main Content */}
-            {!result ? (
-                <div className="space-y-6">
-                    {/* Dropzone */}
+            <div className="relative z-10 max-w-5xl mx-auto">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="card p-6"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-6"
                     >
-                        <div
-                            {...getRootProps()}
-                            className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${isDragActive
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                : 'border-gray-300 dark:border-slate-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
-                                }`}
-                        >
-                            <input {...getInputProps()} />
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                    <Upload className="w-8 h-8 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
-                                        {isDragActive ? 'Drop your PDFs here' : 'Drag & drop PDF files here'}
-                                    </p>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        or click to browse (minimum 2 files)
-                                    </p>
-                                </div>
+                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-500 p-[1px] shadow-2xl shadow-indigo-500/20">
+                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
+                                <Merge className="w-10 h-10 text-blue-400" />
                             </div>
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight">Merge <span className="text-gradient-premium">PDF</span></h1>
+                            <p className="text-slate-400 font-medium mt-1">Combine multiple documents seamlessly</p>
                         </div>
                     </motion.div>
 
-                    {/* File List with Reorder */}
-                    {files.length > 0 && (
+                    {files.length > 0 && !result && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            onClick={clearAll}
+                            className="px-6 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-all flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Clear Workspace
+                        </motion.button>
+                    )}
+                </div>
+
+                {!result ? (
+                    <div className="grid lg:grid-cols-12 gap-8 items-start">
+                        {/* Workspace / Dropzone */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="card p-6"
+                            className="lg:col-span-8 space-y-6"
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">
-                                    Files to Merge ({files.length})
-                                </h2>
+                            <div
+                                {...getRootProps()}
+                                className={clsx(
+                                    "dropzone-premium group bg-slate-900/20 backdrop-blur-sm",
+                                    files.length > 0 ? "p-8" : "h-[400px] flex items-center justify-center"
+                                )}
+                            >
+                                <input {...getInputProps()} />
+                                {files.length === 0 ? (
+                                    <div className="flex flex-col items-center gap-6 group text-center">
+                                        <div className="relative">
+                                            <div className="w-24 h-24 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 mx-auto">
+                                                <Upload className="w-12 h-12 text-blue-400" />
+                                            </div>
+                                            <div className="absolute inset-0 rounded-full border border-blue-500/30 animate-ping opacity-20"></div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-2xl font-bold text-white">Drop your PDFs here</h3>
+                                            <p className="text-slate-400 font-medium">Click to browse your files (min 2)</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-4 py-8 border-2 border-dashed border-white/5 rounded-2xl hover:border-blue-500/50 transition-colors cursor-pointer group">
+                                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <Upload className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-300">Add More Documents</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* File List */}
+                            {files.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                        <span>Order & Layout</span>
+                                        <span>Drag to adjust</span>
+                                    </div>
+                                    <Reorder.Group
+                                        axis="y"
+                                        values={files}
+                                        onReorder={setFiles}
+                                        className="space-y-3"
+                                    >
+                                        {files.map((item, index) => (
+                                            <Reorder.Item
+                                                key={item.id}
+                                                value={item}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className="group flex items-center gap-4 p-4 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-blue-500/30 hover:bg-slate-800/60 transition-all cursor-grab active:cursor-grabbing shadow-xl"
+                                            >
+                                                <div className="flex flex-col items-center gap-1 text-slate-600 group-hover:text-blue-400 transition-colors">
+                                                    <GripVertical className="w-5 h-5" />
+                                                </div>
+                                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                                                    <FileText className="w-6 h-6 text-blue-400" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-white truncate text-sm">
+                                                        {item.file.name}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 font-medium">{formatBytes(item.file.size)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-xs font-black text-slate-700 group-hover:text-blue-500/50 transition-colors">#{index + 1}</span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeFile(item.id);
+                                                        }}
+                                                        className="p-2.5 rounded-xl hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 transition-all"
+                                                    >
+                                                        <X className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            </Reorder.Item>
+                                        ))}
+                                    </Reorder.Group>
+                                </div>
+                            )}
+                        </motion.div>
+
+                        {/* Configuration Sidebar */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="lg:col-span-4"
+                        >
+                            <div className="glass-card-premium p-8 sticky top-24 space-y-8">
+                                <div className="space-y-2">
+                                    <h3 className="text-lg font-black text-white">Merge Configuration</h3>
+                                    <p className="text-xs text-slate-500 font-medium">Configure document output</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+                                        <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
+                                            <span className="text-slate-500">Selected Files</span>
+                                            <span className="text-white">{files.length} Documents</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
+                                            <span className="text-slate-500">Total Size</span>
+                                            <span className="text-white">
+                                                {formatBytes(files.reduce((acc, f) => acc + f.file.size, 0))}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-start gap-3">
+                                        <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+                                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                                            Files will be merged in the <span className="text-white font-bold">exact order</span> shown in the workspace.
+                                        </p>
+                                    </div>
+                                </div>
+
                                 <button
-                                    onClick={clearAll}
-                                    className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                                    onClick={handleMerge}
+                                    disabled={isProcessing || files.length < 2}
+                                    className={clsx(
+                                        "w-full btn-premium py-5 group gap-3",
+                                        (isProcessing || files.length < 2) && "opacity-50 grayscale cursor-not-allowed"
+                                    )}
                                 >
-                                    <Trash2 className="w-4 h-4" />
-                                    Clear All
+                                    {isProcessing ? (
+                                        <>
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Merge className="w-6 h-6" />
+                                            <span>Merge Documents</span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </button>
+
+                                {files.length === 1 && (
+                                    <p className="text-center text-[10px] text-amber-400 font-bold uppercase tracking-widest">
+                                        Add at least 2 files
+                                    </p>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                ) : (
+                    /* Project Complete View */
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-2xl mx-auto"
+                    >
+                        <div className="glass-card-premium p-12 text-center space-y-10 relative overflow-hidden">
+                            {/* Success burst effect */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] -z-10"></div>
+
+                            <div className="relative">
+                                <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-2xl animate-float">
+                                    <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                </div>
+                                <h2 className="text-4xl font-black text-white tracking-tight">Merge Complete!</h2>
+                                <p className="text-slate-400 font-medium mt-2">Your documents have been unified successfully</p>
+                            </div>
+
+                            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-3xl p-8 grid grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Files</p>
+                                    <p className="text-xl font-black text-white text-center">{result.inputFiles}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Pages</p>
+                                    <p className="text-xl font-black text-white text-center">{result.pageCount}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Size</p>
+                                    <p className="text-xl font-black text-white text-center">{formatBytes(result.size || 0)}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-center gap-4">
+                                <button
+                                    onClick={handleDownload}
+                                    className="w-full btn-premium py-5 flex items-center justify-center gap-3"
+                                >
+                                    <Download className="w-6 h-6" />
+                                    <span>Download PDF</span>
+                                </button>
+                                <button
+                                    onClick={() => setShareModalOpen(true)}
+                                    className="w-full btn-glass py-5 border-white/10 hover:border-cyan-500/50 flex items-center justify-center gap-3"
+                                >
+                                    <Share2 className="w-5 h-5 text-cyan-400" />
+                                    <span>Sync & Share</span>
                                 </button>
                             </div>
 
-                            <p className="text-sm text-gray-500 mb-4">
-                                Drag files to reorder them before merging
-                            </p>
-
-                            <Reorder.Group
-                                axis="y"
-                                values={files}
-                                onReorder={setFiles}
-                                className="space-y-2"
+                            <button
+                                onClick={clearAll}
+                                className="text-sm font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest"
                             >
-                                {files.map((item, index) => (
-                                    <Reorder.Item
-                                        key={item.id}
-                                        value={item}
-                                        className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
-                                    >
-                                        <GripVertical className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                        <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                                            <FileText className="w-5 h-5 text-blue-600" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                                                {item.file.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{formatBytes(item.file.size)}</p>
-                                        </div>
-                                        <span className="text-sm text-gray-400 font-medium">
-                                            #{index + 1}
-                                        </span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeFile(item.id);
-                                            }}
-                                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 transition-colors"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </Reorder.Item>
-                                ))}
-                            </Reorder.Group>
-
-                            {/* Merge Button */}
-                            {files.length >= 2 && (
-                                <div className="mt-6 flex gap-4">
-                                    <button
-                                        onClick={handleMerge}
-                                        disabled={isProcessing}
-                                        className="btn-primary flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600"
-                                    >
-                                        {isProcessing ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                Merging {files.length} files...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Merge className="w-5 h-5" />
-                                                Merge {files.length} PDF Files
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )}
-
-                            {files.length === 1 && (
-                                <p className="mt-4 text-center text-amber-600 dark:text-amber-400 text-sm">
-                                    ⚠️ Please add at least one more file to merge
-                                </p>
-                            )}
-                        </motion.div>
-                    )}
-
-                    {/* Instructions */}
-                    {files.length === 0 && (
-                        <div className="card p-6">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                                How to Merge PDFs
-                            </h3>
-                            <ol className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center font-medium">
-                                        1
-                                    </span>
-                                    Upload 2 or more PDF files using drag & drop
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center font-medium">
-                                        2
-                                    </span>
-                                    Drag files to arrange them in your preferred order
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center font-medium">
-                                        3
-                                    </span>
-                                    Click "Merge" and download your combined PDF
-                                </li>
-                            </ol>
+                                Start New Project
+                            </button>
                         </div>
-                    )}
-                </div>
-            ) : (
-                /* Result Section */
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="card p-8 text-center space-y-6"
-                >
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30">
-                        <CheckCircle className="w-10 h-10 text-green-600" />
-                    </div>
+                    </motion.div>
+                )}
+            </div>
 
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            Merge Complete!
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            {files.length} PDFs combined into one document
-                        </p>
-                    </div>
-
-                    <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-6 space-y-3">
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div>
-                                <p className="text-sm text-gray-500">Files Merged</p>
-                                <p className="text-xl font-bold text-blue-600">{result.inputFiles}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Total Pages</p>
-                                <p className="text-xl font-bold text-blue-600">{result.pageCount}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">File Size</p>
-                                <p className="text-xl font-bold text-blue-600">{formatBytes(result.size || 0)}</p>
-                            </div>
-                        </div>
-                        {result.processingMs && (
-                            <p className="text-xs text-gray-400">
-                                Processed in {result.processingMs}ms
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={handleDownload}
-                            className="btn-primary flex items-center justify-center gap-2"
-                        >
-                            <Download className="w-5 h-5" />
-                            Download Merged PDF
-                        </button>
-                        <button
-                            onClick={() => setShareModalOpen(true)}
-                            className="btn-secondary flex items-center justify-center gap-2"
-                        >
-                            <Share2 className="w-5 h-5" />
-                            Share
-                        </button>
-                        <button onClick={clearAll} className="btn-secondary">
-                            Merge More Files
-                        </button>
-                    </div>
-
-                    <ShareModal
-                        isOpen={shareModalOpen}
-                        onClose={() => setShareModalOpen(false)}
-                        fileId={result.fileId}
-                        fileType="temp"
-                    />
-                </motion.div>
-            )}
+            <ShareModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                fileId={result?.fileId}
+                fileType="temp"
+            />
         </div>
     );
 }

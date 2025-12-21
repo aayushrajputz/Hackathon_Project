@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 interface ShareModalProps {
     isOpen: boolean;
     onClose: () => void;
-    fileId: string;
+    fileId: string | null | undefined;
     fileType: 'temp' | 'library';
 }
 
@@ -32,7 +32,7 @@ export default function ShareModal({ isOpen, onClose, fileId, fileType }: ShareM
     }, [isOpen]);
 
     const handleGenerate = async () => {
-        if (isFree) return;
+        if (isFree || !fileId) return;
         setLoading(true);
         try {
             const response = await api.post('/share', {

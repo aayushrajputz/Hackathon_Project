@@ -6,12 +6,12 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'BrainyPDF - AI-Powered PDF Toolkit',
+    title: 'BinaryPDF - AI-Powered PDF Toolkit',
     description: 'Merge, split, compress, and transform your PDFs with AI-powered features',
     keywords: 'PDF, merge, split, compress, OCR, AI, tools',
-    authors: [{ name: 'BrainyPDF' }],
+    authors: [{ name: 'BinaryPDF' }],
     openGraph: {
-        title: 'BrainyPDF - AI-Powered PDF Toolkit',
+        title: 'BinaryPDF - AI-Powered PDF Toolkit',
         description: 'Merge, split, compress, and transform your PDFs with AI-powered features',
         type: 'website',
     },
@@ -31,20 +31,24 @@ export default function RootLayout({
                     toastOptions={{
                         duration: 4000,
                         style: {
-                            background: '#1e293b',
+                            background: 'rgba(15, 23, 42, 0.9)',
+                            backdropFilter: 'blur(16px)',
                             color: '#f1f5f9',
-                            borderRadius: '12px',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                            padding: '12px 20px',
                         },
                         success: {
                             iconTheme: {
-                                primary: '#22c55e',
-                                secondary: '#f1f5f9',
+                                primary: '#22d3ee',
+                                secondary: '#0f172a',
                             },
                         },
                         error: {
                             iconTheme: {
-                                primary: '#ef4444',
-                                secondary: '#f1f5f9',
+                                primary: '#f43f5e',
+                                secondary: '#0f172a',
                             },
                         },
                     }}

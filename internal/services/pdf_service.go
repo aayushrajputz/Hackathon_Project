@@ -121,6 +121,15 @@ func (s *PDFService) GetPageCount(data []byte) (int, error) {
 		return r.NumPage(), nil
 	}
 
+    // Fallback 3: Heuristic count of /Type /Page
+    // This is not 100% accurate but better than 0 for display
+    count1 := bytes.Count(data, []byte("/Type /Page"))
+    count2 := bytes.Count(data, []byte("/Type/Page"))
+    estimated := count1 + count2
+    if estimated > 0 {
+        return estimated, nil
+    }
+
 	return 0, fmt.Errorf("failed to count pages with all methods: %w", err)
 }
 

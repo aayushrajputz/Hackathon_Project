@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore, useAppStore } from '@/lib/store';
+import { motion } from 'framer-motion';
 import {
     FileText,
     Home,
@@ -105,72 +106,85 @@ export default function Sidebar() {
             {/* Sidebar */}
             <aside
                 className={clsx(
-                    'fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-50 transition-transform duration-300',
+                    'fixed left-0 top-0 bottom-0 w-72 bg-slate-950 border-r border-white/5 z-50 transition-transform duration-500 ease-in-out',
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
                 )}
             >
-                <div className="flex flex-col h-full">
+                {/* Background Decoration */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2"></div>
+                </div>
+
+                <div className="relative flex flex-col h-full z-10">
                     {/* Logo */}
-                    <div className="p-6 border-b border-gray-200 dark:border-slate-700">
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-                                <FileText className="w-6 h-6 text-white" />
+                    <div className="p-8">
+                        <Link href="/" className="flex items-center gap-3 group">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <FileText className="w-7 h-7 text-white" />
                             </div>
-                            <span className="text-xl font-bold gradient-text">BrainyPDF</span>
+                            <div>
+                                <h1 className="text-xl font-bold tracking-tight text-white">Binary<span className="text-cyan-400">PDF</span></h1>
+                                <p className="text-[10px] text-slate-500 font-medium tracking-widest uppercase">Pro Dashboard</p>
+                            </div>
                         </Link>
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-                        <Link
-                            href="/dashboard"
-                            className={clsx(
-                                'sidebar-link',
-                                pathname === '/dashboard' && 'sidebar-link-active'
-                            )}
-                        >
-                            <Home className="w-5 h-5" />
-                            Dashboard
-                        </Link>
-
-                        <Link
-                            href="/library"
-                            className={clsx(
-                                'sidebar-link',
-                                pathname === '/library' && 'sidebar-link-active'
-                            )}
-                        >
-                            <FolderOpen className="w-5 h-5" />
-                            My Library
-                        </Link>
+                    <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-8 custom-scrollbar">
+                        <div>
+                            <p className="px-4 mb-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">General</p>
+                            <div className="space-y-1">
+                                <Link
+                                    href="/dashboard"
+                                    className={clsx(
+                                        'sidebar-link-v2 group',
+                                        pathname === '/dashboard' && 'sidebar-link-v2-active'
+                                    )}
+                                >
+                                    <Home className="w-5 h-5" />
+                                    <span>Home</span>
+                                </Link>
+                                <Link
+                                    href="/library"
+                                    className={clsx(
+                                        'sidebar-link-v2 group',
+                                        pathname === '/library' && 'sidebar-link-v2-active'
+                                    )}
+                                >
+                                    <FolderOpen className="w-5 h-5" />
+                                    <span>Library</span>
+                                </Link>
+                            </div>
+                        </div>
 
                         {/* PDF Tools Section */}
-                        <div className="pt-4">
+                        <div>
                             <button
                                 onClick={() => setPdfExpanded(!pdfExpanded)}
-                                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider"
+                                className="flex items-center justify-between w-full px-4 mb-3 group"
                             >
-                                PDF Tools
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] group-hover:text-slate-300 transition-colors">PDF Tools</p>
                                 <ChevronDown
                                     className={clsx(
-                                        'w-4 h-4 transition-transform',
+                                        'w-4 h-4 text-slate-500 transition-transform duration-300',
                                         pdfExpanded && 'rotate-180'
                                     )}
                                 />
                             </button>
                             {pdfExpanded && (
-                                <div className="space-y-1 mt-2">
+                                <div className="space-y-1 grid grid-cols-1">
                                     {pdfTools.map((tool) => (
                                         <Link
                                             key={tool.href}
                                             href={tool.href}
                                             className={clsx(
-                                                'sidebar-link text-sm',
-                                                pathname === tool.href && 'sidebar-link-active'
+                                                'sidebar-link-v2 text-sm group',
+                                                pathname === tool.href && 'sidebar-link-v2-active'
                                             )}
                                         >
                                             <tool.icon className="w-4 h-4" />
-                                            {tool.name}
+                                            <span>{tool.name}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -178,32 +192,32 @@ export default function Sidebar() {
                         </div>
 
                         {/* AI Tools Section */}
-                        <div className="pt-4">
+                        <div className="pb-8">
                             <button
                                 onClick={() => setAiExpanded(!aiExpanded)}
-                                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider"
+                                className="flex items-center justify-between w-full px-4 mb-3 group"
                             >
-                                AI Features
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] group-hover:text-slate-300 transition-colors">AI Intelligence</p>
                                 <ChevronDown
                                     className={clsx(
-                                        'w-4 h-4 transition-transform',
+                                        'w-4 h-4 text-slate-500 transition-transform duration-300',
                                         aiExpanded && 'rotate-180'
                                     )}
                                 />
                             </button>
                             {aiExpanded && (
-                                <div className="space-y-1 mt-2">
+                                <div className="space-y-1">
                                     {aiTools.map((tool) => (
                                         <Link
                                             key={tool.href}
                                             href={tool.href}
                                             className={clsx(
-                                                'sidebar-link text-sm',
-                                                pathname === tool.href && 'sidebar-link-active'
+                                                'sidebar-link-v2 text-sm group',
+                                                pathname === tool.href && 'sidebar-link-v2-active'
                                             )}
                                         >
                                             <tool.icon className="w-4 h-4" />
-                                            {tool.name}
+                                            <span>{tool.name}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -211,91 +225,78 @@ export default function Sidebar() {
                         </div>
                     </nav>
 
-                    {/* User Section */}
-                    <div className="p-4 border-t border-gray-200 dark:border-slate-700">
-                        {user ? (
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
-                                    {user.photoURL ? (
-                                        <Image
-                                            src={user.photoURL}
-                                            alt={user.displayName}
-                                            width={40}
-                                            height={40}
-                                            className="rounded-full"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium">
-                                            {user.displayName?.charAt(0) || 'U'}
-                                        </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{user.displayName}</p>
-                                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                                    </div>
-                                </div>
-
-                                {/* Storage Usage */}
-                                <div className="px-1">
-                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                        <span>Storage ({user.plan?.toUpperCase() || 'FREE'})</span>
-                                        <span>
-                                            {formatStorageSize(user.storageUsed || 0)} / {formatStorageSize(effectiveLimit)}
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                                        <div
-                                            className={clsx(
-                                                "h-full rounded-full transition-all duration-500",
-                                                usageRatio > 0.9 ? "bg-red-500" :
-                                                    usageRatio > 0.7 ? "bg-yellow-500" :
-                                                        "bg-green-500"
+                    {/* User Section - Premium Card */}
+                    <div className="p-4 mt-auto">
+                        <div className="glass-card-premium p-5 space-y-4">
+                            {user && (
+                                <>
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            {user.photoURL ? (
+                                                <Image
+                                                    src={user.photoURL}
+                                                    alt={user.displayName}
+                                                    width={44}
+                                                    height={44}
+                                                    className="rounded-xl border border-white/10"
+                                                />
+                                            ) : (
+                                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                                    {user.displayName?.charAt(0) || 'U'}
+                                                </div>
                                             )}
-                                            style={{ width: `${usagePercent}%` }}
-                                        />
-                                    </div>
-                                    {usageRatio > 0.9 && (
-                                        <div className="mt-1 text-xs text-red-500 font-medium">
-                                            Storage almost full - Upgrade now!
+                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
                                         </div>
-                                    )}
-                                </div>
-                                <Link
-                                    href="/plans"
-                                    className={clsx(
-                                        'sidebar-link',
-                                        pathname === '/plans' && 'sidebar-link-active'
-                                    )}
-                                >
-                                    <CreditCard className="w-5 h-5" />
-                                    Upgrade to Pro
-                                </Link>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-white truncate">{user.displayName}</p>
+                                            <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-wider">{user.plan || 'Free'} Member</p>
+                                        </div>
+                                    </div>
 
-                                <div className="flex gap-2">
-                                    <Link
-                                        href="/settings"
-                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                                    >
-                                        <Settings className="w-4 h-4" />
-                                        Settings
-                                    </Link>
-                                    <button
-                                        onClick={signOut}
-                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:text-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Sign Out
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <Link
-                                href="/login"
-                                className="block w-full text-center px-4 py-3 bg-primary-500 text-white font-medium rounded-xl hover:bg-primary-600 transition-colors"
-                            >
-                                Sign In
-                            </Link>
-                        )}
+                                    {/* Storage Usage */}
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">Cloud Storage</span>
+                                            <span className="text-[10px] font-bold text-white">
+                                                {Math.round(usagePercent)}%
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${usagePercent}%` }}
+                                                className={clsx(
+                                                    "h-full rounded-full",
+                                                    usageRatio > 0.9 ? "bg-rose-500" :
+                                                        usageRatio > 0.7 ? "bg-amber-500" :
+                                                            "bg-cyan-500"
+                                                )}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 text-center font-medium">
+                                            {formatStorageSize(user.storageUsed || 0)} of {formatStorageSize(effectiveLimit)}
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-2 border-t border-white/5 space-y-1">
+                                        <Link
+                                            href="/plans"
+                                            className="sidebar-link-v2 py-2 text-xs group"
+                                        >
+                                            <CreditCard className="w-3.5 h-3.5" />
+                                            <span>Upgrade Plan</span>
+                                        </Link>
+                                        <button
+                                            onClick={signOut}
+                                            className="sidebar-link-v2 py-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 group"
+                                        >
+                                            <LogOut className="w-3.5 h-3.5" />
+                                            <span>Logout</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </aside>

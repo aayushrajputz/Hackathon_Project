@@ -65,7 +65,7 @@ export default function PDFPreview({
 
                     <div className="mt-auto">
                         <p className="text-xs text-gray-500 text-center">
-                            Powered by BrainyPDF Engine
+                            Powered by BinaryPDF Engine
                         </p>
                     </div>
                 </div>

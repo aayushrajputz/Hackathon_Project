@@ -127,7 +127,7 @@ export default function PlansPage() {
                 key: orderData.keyId,
                 amount: orderData.amount,
                 currency: 'INR',
-                name: 'BrainyPDF',
+                name: 'BinaryPDF',
                 description: `Upgrade to ${planKey.toUpperCase()} Plan`,
                 order_id: orderData.orderId,
                 handler: async function (response: any) {

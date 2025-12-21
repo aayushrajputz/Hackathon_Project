@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Scissors,
     Download,
@@ -9,17 +9,17 @@ import {
     CheckCircle,
     FileText,
     Upload,
-    Plus,
     X,
     HelpCircle,
     Share2,
-    Copy,
-    Link as LinkIcon
+    ArrowRight,
+    Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
 import { api, shareApi } from '@/lib/api';
-import { downloadFile } from '@/lib/utils';
+import clsx from 'clsx';
+import ShareModal from '@/components/ui/ShareModal';
 
 interface SplitFile {
     fileId: string;
@@ -35,23 +35,20 @@ export default function SplitPDFPage() {
     const [pageRanges, setPageRanges] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<{ files: SplitFile[]; inputPages: number } | null>(null);
-    const [pageCount, setPageCount] = useState<number | null>(null);
-    const [shareUrl, setShareUrl] = useState<string | null>(null);
-    const [isSharing, setIsSharing] = useState<string | null>(null); // fileId of sharing file
+    const [isSharing, setIsSharing] = useState<string | null>(null);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
             setFile(acceptedFiles[0]);
             setResult(null);
-            // Get page count would require backend call - for now we'll validate on submit
         }
     }, []);
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps } = useDropzone({
         onDrop,
-        accept: {
-            'application/pdf': ['.pdf'],
-        },
+        accept: { 'application/pdf': ['.pdf'] },
         multiple: false,
     });
 
@@ -59,24 +56,16 @@ export default function SplitPDFPage() {
         setFile(null);
         setPageRanges('');
         setResult(null);
-        setPageCount(null);
-        setShareUrl(null);
     };
 
     const handleSplit = async () => {
-        if (!file) {
-            toast.error('Please upload a PDF file');
-            return;
-        }
-
+        if (!file) return;
         if (!pageRanges.trim()) {
-            toast.error('Please enter page ranges (e.g., 1-3, 4-7)');
+            toast.error('Please enter page ranges');
             return;
         }
 
         setIsProcessing(true);
-        setResult(null);
-
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -86,13 +75,8 @@ export default function SplitPDFPage() {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            const data = response.data.data;
-            setResult({
-                files: data.files,
-                inputPages: data.inputPages,
-            });
-            setPageCount(data.inputPages);
-            toast.success(`PDF split into ${data.files.length} files!`);
+            setResult(response.data.data);
+            toast.success(`PDF split into ${response.data.data.files.length} files!`);
         } catch (error: any) {
             toast.error(error.response?.data?.error?.message || 'Failed to split PDF');
         } finally {
@@ -116,37 +100,13 @@ export default function SplitPDFPage() {
             window.URL.revokeObjectURL(blobUrl);
             toast.success('Download started!');
         } catch (error) {
-            console.error(error);
             toast.error('Failed to download file');
         }
     };
 
-    const handleShare = async (fileId: string) => {
-        setIsSharing(fileId);
-        try {
-            const response = await shareApi.create(fileId, 'library', 24);
-            const url = response.data.data.url;
-            setShareUrl(url);
-            await navigator.clipboard.writeText(url);
-            toast.success('Share link copied to clipboard!');
-        } catch (error: any) {
-            toast.error(error.response?.data?.error?.message || 'Failed to create share link');
-        } finally {
-            setIsSharing(null);
-        }
-    };
-
-    const copyShareUrl = async () => {
-        if (shareUrl) {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success('Link copied!');
-        }
-    };
-
-    const handleDownloadAll = () => {
-        result?.files.forEach(file => {
-            handleDownload(file.fileId, file.filename);
-        });
+    const openShare = (fileId: string) => {
+        setActiveFileId(fileId);
+        setShareModalOpen(true);
     };
 
     const formatBytes = (bytes: number): string => {
@@ -159,248 +119,232 @@ export default function SplitPDFPage() {
 
     const rangeExamples = [
         { label: '1-3', desc: 'Pages 1 to 3' },
-        { label: '1-3, 4-6', desc: 'Two separate ranges' },
-        { label: '1, 3, 5', desc: 'Individual pages' },
-        { label: '1-5, 10-15', desc: 'Non-consecutive ranges' },
+        { label: '1-3, 4-6', desc: 'Multi-range' },
+        { label: '1, 3, 5', desc: 'Specific pages' },
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 mb-4">
-                    <Scissors className="w-8 h-8 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    Split PDF File
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Divide a PDF into multiple files by page ranges
-                </p>
-            </div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
+            {/* Background elements */}
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-40"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
 
-            {/* Main Content */}
-            {!result ? (
-                <div className="space-y-6">
-                    {/* Upload Section */}
+            <div className="relative z-10 max-w-5xl mx-auto">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="card p-6"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-6"
                     >
-                        {!file ? (
-                            <div
-                                {...getRootProps()}
-                                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${isDragActive
-                                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                                    : 'border-gray-300 dark:border-slate-600 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10'
-                                    }`}
-                            >
-                                <input {...getInputProps()} />
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                        <Upload className="w-8 h-8 text-purple-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
-                                            {isDragActive ? 'Drop your PDF here' : 'Drag & drop a PDF file here'}
-                                        </p>
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            or click to browse
-                                        </p>
-                                    </div>
-                                </div>
+                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-400 via-pink-500 to-rose-500 p-[1px] shadow-2xl shadow-rose-500/20">
+                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
+                                <Scissors className="w-10 h-10 text-rose-400" />
                             </div>
-                        ) : (
-                            <div className="flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                                <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                    <FileText className="w-6 h-6 text-purple-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 dark:text-white truncate">
-                                        {file.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500">{formatBytes(file.size)}</p>
-                                </div>
-                                <button
-                                    onClick={handleClear}
-                                    className="p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-gray-500 hover:text-purple-600 transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        )}
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight">Split <span className="text-gradient-premium">PDF</span></h1>
+                            <p className="text-slate-400 font-medium mt-1">Extract specific page ranges with precision</p>
+                        </div>
                     </motion.div>
 
-                    {/* Page Range Input */}
-                    {file && (
+                    {file && !result && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            onClick={handleClear}
+                            className="px-6 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-white/5 transition-all flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Reset Tool
+                        </motion.button>
+                    )}
+                </div>
+
+                {!result ? (
+                    <div className="grid lg:grid-cols-12 gap-8">
+                        {/* Workspace */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="card p-6 space-y-4"
+                            className="lg:col-span-12"
                         >
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Page Ranges
-                                </label>
-                                <input
-                                    type="text"
-                                    value={pageRanges}
-                                    onChange={(e) => setPageRanges(e.target.value)}
-                                    placeholder="Enter page ranges (e.g., 1-3, 4-7, 8-10)"
-                                    className="input-field"
-                                />
-                            </div>
+                            <div className="glass-card-premium overflow-hidden border-white/10">
+                                <div className="grid md:grid-cols-2">
+                                    {/* Upload Side */}
+                                    <div className="p-8 md:border-r border-white/5 bg-slate-900/40">
+                                        {!file ? (
+                                            <div
+                                                {...getRootProps()}
+                                                className="dropzone-premium group h-[300px] flex items-center justify-center border-dashed cursor-pointer"
+                                            >
+                                                <input {...getInputProps()} />
+                                                <div className="flex flex-col items-center gap-6 text-center">
+                                                    <div className="relative">
+                                                        <div className="w-20 h-20 rounded-full bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                                            <Upload className="w-10 h-10 text-rose-400" />
+                                                        </div>
+                                                        <div className="absolute inset-0 rounded-full border border-rose-500/30 animate-ping opacity-20"></div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <h3 className="text-xl font-bold text-white tracking-tight">Select PDF Document</h3>
+                                                        <p className="text-slate-500 font-medium text-sm">Drag and drop or browse files</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="h-[300px] flex flex-col items-center justify-center space-y-6">
+                                                <div className="relative group">
+                                                    <div className="w-24 h-24 rounded-3xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20 group-hover:rotate-6 transition-transform">
+                                                        <FileText className="w-12 h-12 text-rose-400" />
+                                                    </div>
+                                                    <button
+                                                        onClick={handleClear}
+                                                        className="absolute -top-2 -right-2 p-2 rounded-full bg-slate-900 border border-white/10 text-slate-400 hover:text-white transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-lg font-black text-white truncate max-w-[250px]">{file.name}</p>
+                                                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">{formatBytes(file.size)}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
 
-                            {/* Range Examples */}
-                            <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <HelpCircle className="w-4 h-4 text-gray-400" />
-                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                        Format Examples
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {rangeExamples.map((example) => (
+                                    {/* Controls Side */}
+                                    <div className="p-10 space-y-10">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                                    <Zap className="w-5 h-5 text-rose-400" />
+                                                    Split Configuration
+                                                </h3>
+                                                <div className="p-2 rounded-lg bg-white/5 border border-white/5 cursor-help group relative">
+                                                    <HelpCircle className="w-4 h-4 text-slate-500" />
+                                                    <div className="absolute bottom-full right-0 mb-3 w-48 p-3 rounded-xl bg-slate-900 border border-white/10 text-[10px] text-slate-400 font-medium leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl">
+                                                        Enter page numbers separated by commas or ranges using dashes (e.g. 1, 3, 5-10)
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Page Ranges</label>
+                                                <input
+                                                    type="text"
+                                                    value={pageRanges}
+                                                    onChange={(e) => setPageRanges(e.target.value)}
+                                                    placeholder="e.g. 1-3, 5, 8-12"
+                                                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-rose-500/50 focus:ring-4 focus:ring-rose-500/10 transition-all outline-none font-mono"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                {rangeExamples.map((ex) => (
+                                                    <button
+                                                        key={ex.label}
+                                                        onClick={() => setPageRanges(ex.label)}
+                                                        className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-slate-400 hover:text-white hover:border-rose-500/30 transition-all uppercase tracking-tighter"
+                                                    >
+                                                        {ex.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <button
-                                            key={example.label}
-                                            onClick={() => setPageRanges(example.label)}
-                                            className="flex items-center gap-2 p-2 text-left rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors"
+                                            onClick={handleSplit}
+                                            disabled={isProcessing || !file || !pageRanges.trim()}
+                                            className={clsx(
+                                                "w-full btn-premium py-5 gap-3",
+                                                (isProcessing || !file || !pageRanges.trim()) && "opacity-50 grayscale cursor-not-allowed"
+                                            )}
                                         >
-                                            <code className="text-sm font-mono text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded">
-                                                {example.label}
-                                            </code>
-                                            <span className="text-xs text-gray-500">{example.desc}</span>
+                                            {isProcessing ? (
+                                                <>
+                                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                                    <span>Processing PDF...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Scissors className="w-6 h-6" />
+                                                    <span>Split Document</span>
+                                                    <ArrowRight className="w-5 h-5" />
+                                                </>
+                                            )}
                                         </button>
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Split Button */}
-                            <button
-                                onClick={handleSplit}
-                                disabled={isProcessing || !pageRanges.trim()}
-                                className="btn-primary w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 disabled:opacity-50"
-                            >
-                                {isProcessing ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Splitting PDF...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Scissors className="w-5 h-5" />
-                                        Split PDF
-                                    </>
-                                )}
-                            </button>
                         </motion.div>
-                    )}
-
-                    {/* Instructions */}
-                    {!file && (
-                        <div className="card p-6">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                                How to Split a PDF
-                            </h3>
-                            <ol className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center font-medium">
-                                        1
-                                    </span>
-                                    Upload the PDF file you want to split
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center font-medium">
-                                        2
-                                    </span>
-                                    Enter page ranges (e.g., "1-3, 4-7" creates 2 files)
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center font-medium">
-                                        3
-                                    </span>
-                                    Download your split PDF files
-                                </li>
-                            </ol>
-                        </div>
-                    )}
-                </div>
-            ) : (
-                /* Result Section */
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="space-y-6"
-                >
-                    {/* Success Header */}
-                    <div className="card p-6 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            Split Complete!
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            Created {result.files.length} files from {result.inputPages} pages
-                        </p>
                     </div>
+                ) : (
+                    /* Results View */
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-8"
+                    >
+                        <div className="glass-card-premium p-10 text-center border-emerald-500/20">
+                            <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-2xl">
+                                <CheckCircle className="w-10 h-10 text-emerald-400" />
+                            </div>
+                            <h2 className="text-3xl font-black text-white px-2">Splitting Success!</h2>
+                            <p className="text-slate-400 font-medium mt-2">Generated {result.files.length} custom documents</p>
 
-                    {/* File List */}
-                    <div className="card p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold">Output Files</h3>
-                            {result.files.length > 1 && (
-                                <button
-                                    onClick={handleDownloadAll}
-                                    className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Download All
-                                </button>
-                            )}
+                            <div className="mt-8 flex justify-center gap-6">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Source Pages</p>
+                                    <p className="text-xl font-black text-white">{result.inputPages}</p>
+                                </div>
+                                <div className="w-px h-10 bg-white/10"></div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Calculated Files</p>
+                                    <p className="text-xl font-black text-white">{result.files.length}</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
                             {result.files.map((splitFile, index) => (
                                 <motion.div
                                     key={splitFile.fileId}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.1 }}
-                                    className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-xl"
+                                    className="group glass-card-premium p-5 flex items-center gap-4 hover:border-rose-500/30 transition-all border-white/5"
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-purple-600" />
+                                    <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center border border-white/10 group-hover:bg-rose-500/10 group-hover:border-rose-500/20 transition-all">
+                                        <FileText className="w-6 h-6 text-slate-400 group-hover:text-rose-400" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-gray-900 dark:text-white truncate">
-                                            {splitFile.filename}
-                                        </p>
-                                        <p className="text-sm text-gray-500">
-                                            {splitFile.pageCount} pages • {formatBytes(splitFile.size)}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-white truncate text-sm">
+                                                {splitFile.filename}
+                                            </p>
+                                            <span className="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded font-black tracking-tighter">
+                                                {splitFile.range}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase">{splitFile.pageCount} Pages</span>
+                                            <span className="text-[10px] text-slate-700 font-black">•</span>
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase">{formatBytes(splitFile.size)}</span>
+                                        </div>
                                     </div>
-                                    <code className="text-sm font-mono text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded">
-                                        {splitFile.range}
-                                    </code>
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-px bg-white/5 mr-1"></div>
                                         <button
-                                            onClick={() => handleShare(splitFile.fileId)}
-                                            disabled={!!isSharing}
-                                            className="p-2 rounded-lg bg-white dark:bg-slate-700 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors border border-gray-200 dark:border-slate-600"
-                                            title="Share"
+                                            onClick={() => openShare(splitFile.fileId)}
+                                            className="p-3 rounded-xl border border-white/5 hover:bg-slate-800 hover:text-cyan-400 transition-all text-slate-500"
                                         >
-                                            {isSharing === splitFile.fileId ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <Share2 className="w-5 h-5" />
-                                            )}
+                                            <Share2 className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => handleDownload(splitFile.fileId, splitFile.filename)}
-                                            className="p-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-                                            title="Download"
+                                            className="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-rose-500 hover:text-white transition-all text-rose-400"
                                         >
                                             <Download className="w-5 h-5" />
                                         </button>
@@ -409,38 +353,47 @@ export default function SplitPDFPage() {
                             ))}
                         </div>
 
-                        {/* Share URL Display */}
-                        {shareUrl && (
-                            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                                <p className="text-sm text-green-700 dark:text-green-300 mb-2 font-medium">
-                                    Last created share link:
-                                </p>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        value={shareUrl}
-                                        readOnly
-                                        className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 border rounded-lg truncate"
-                                    />
-                                    <button
-                                        onClick={copyShareUrl}
-                                        className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        <div className="flex justify-center pt-8">
+                            <button
+                                onClick={handleClear}
+                                className="px-8 py-3 rounded-2xl bg-slate-900 border border-white/10 text-slate-400 font-bold hover:text-white hover:border-white/20 transition-all text-sm uppercase tracking-widest"
+                            >
+                                Process New Document
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-center">
-                        <button onClick={handleClear} className="btn-secondary">
-                            Split Another PDF
-                        </button>
-                    </div>
-                </motion.div>
-            )}
+            <ShareModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                fileId={activeFileId}
+                fileType="temp"
+            />
         </div>
+    );
+}
+
+function Trash2(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            <line x1="10" x2="10" y1="11" y2="17" />
+            <line x1="14" x2="14" y1="11" y2="17" />
+        </svg>
     );
 }

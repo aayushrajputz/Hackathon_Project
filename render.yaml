@@ -5,7 +5,7 @@ services:
   #    - Uses a Persistent Disk to store files safely.
   # --------------------------------------------------------------------------------
   - type: pserv
-    name: brainypdf-minio
+    name: binarypdf-minio
     image: minio/minio:latest
     plan: free # Note: Private Services might require paid plan on Render, or use Starter.
     env: docker
@@ -25,7 +25,7 @@ services:
   #    - Builds your custom Go backend (with Tesseract/LibreOffice bundled).
   # --------------------------------------------------------------------------------
   - type: web
-    name: brainypdf-backend
+    name: binarypdf-backend
     env: docker
     plan: free
     dockerContext: .
@@ -37,7 +37,7 @@ services:
       - key: MINIO_ENDPOINT
         fromService:
           type: pserv
-          name: brainypdf-minio
+          name: binarypdf-minio
           property: host
       - key: MINIO_BUCKET_TEMP
         value: temp
@@ -46,12 +46,12 @@ services:
       - key: MINIO_ACCESS_KEY
         fromService:
           type: pserv
-          name: brainypdf-minio
+          name: binarypdf-minio
           envVarKey: MINIO_ROOT_USER
       - key: MINIO_SECRET_KEY
         fromService:
           type: pserv
-          name: brainypdf-minio
+          name: binarypdf-minio
           envVarKey: MINIO_ROOT_PASSWORD
       - key: MINIO_USE_SSL
         value: false

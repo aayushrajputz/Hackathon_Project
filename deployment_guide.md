@@ -1,4 +1,4 @@
-# BrainyPDF Deployment Guide
+# BinaryPDF Deployment Guide
 
 ## 1. Frontend (Vercel)
 
@@ -8,7 +8,7 @@
 4.  **Framework Preset**: Next.js (Default).
 5.  **Root Directory**: Click `Edit` and select `frontend`.
 6.  **Environment Variables**:
-    *   `NEXT_PUBLIC_API_URL`: The URL of your Render Backend (e.g., `https://brainypdf-backend.onrender.com/api/v1`)
+    *   `NEXT_PUBLIC_API_URL`: The URL of your Render Backend (e.g., `https://binarypdf-backend.onrender.com/api/v1`)
     *   `NEXT_PUBLIC_FIREBASE_API_KEY`: Your Firebase config.
     *   ... (Add all other `NEXT_PUBLIC_` variables from `.env`).
 7.  Click **Deploy**.

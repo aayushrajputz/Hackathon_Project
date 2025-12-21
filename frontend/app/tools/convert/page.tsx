@@ -19,6 +19,10 @@ import {
     Eye,
     ChevronLeft,
     ChevronRight,
+    Sparkles,
+    Zap,
+    Shield,
+    History,
 } from 'lucide-react';
 import ShareModal from '@/components/ui/ShareModal';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -31,6 +35,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
+import clsx from 'clsx';
 
 // Conversion types
 type ConversionType = 'word-to-pdf' | 'pdf-to-word' | 'excel-to-pdf' | 'ppt-to-pdf' | 'odt-to-pdf';
@@ -41,47 +46,51 @@ interface ConversionCard {
     description: string;
     inputFormats: string[];
     outputFormat: string;
-    icon: React.ReactNode;
+    icon: any;
     color: string;
+    glow: string;
 }
 
 const conversionCards: ConversionCard[] = [
     {
         id: 'word-to-pdf',
         title: 'Word to PDF',
-        description: 'Convert DOC, DOCX to PDF',
+        description: 'Elite conversion for DOCX/DOC',
         inputFormats: ['.doc', '.docx'],
         outputFormat: 'pdf',
-        icon: <FileText className="w-8 h-8" />,
-        color: 'from-blue-500 to-blue-600'
+        icon: FileText,
+        color: 'from-blue-400 to-indigo-600',
+        glow: 'shadow-blue-500/20'
     },
-
     {
         id: 'excel-to-pdf',
         title: 'Excel to PDF',
-        description: 'Convert XLS, XLSX to PDF',
+        description: 'Precision table rendering',
         inputFormats: ['.xls', '.xlsx'],
         outputFormat: 'pdf',
-        icon: <FileSpreadsheet className="w-8 h-8" />,
-        color: 'from-emerald-500 to-emerald-600'
+        icon: FileSpreadsheet,
+        color: 'from-emerald-400 to-teal-600',
+        glow: 'shadow-emerald-500/20'
     },
     {
         id: 'ppt-to-pdf',
-        title: 'PowerPoint to PDF',
-        description: 'Convert PPT, PPTX to PDF',
+        title: 'Slides to PDF',
+        description: 'Retain high-fidelity visuals',
         inputFormats: ['.ppt', '.pptx'],
         outputFormat: 'pdf',
-        icon: <Presentation className="w-8 h-8" />,
-        color: 'from-orange-500 to-orange-600'
+        icon: Presentation,
+        color: 'from-orange-400 to-rose-600',
+        glow: 'shadow-orange-500/20'
     },
     {
         id: 'odt-to-pdf',
         title: 'ODT to PDF',
-        description: 'Convert OpenDocument to PDF',
+        description: 'OpenDocument standard conversion',
         inputFormats: ['.odt'],
         outputFormat: 'pdf',
-        icon: <File className="w-8 h-8" />,
-        color: 'from-purple-500 to-purple-600'
+        icon: File,
+        color: 'from-purple-400 to-fuchsia-600',
+        glow: 'shadow-purple-500/20'
     }
 ];
 
@@ -105,14 +114,13 @@ export default function ConvertPage() {
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (!selectedCard) return;
 
-        // Filter by allowed extensions
         const validFiles = acceptedFiles.filter(file => {
             const ext = '.' + file.name.split('.').pop()?.toLowerCase();
             return selectedCard.inputFormats.includes(ext);
         });
 
         if (validFiles.length !== acceptedFiles.length) {
-            toast.error(`Some files were skipped. Allowed: ${selectedCard.inputFormats.join(', ')}`);
+            toast.error(`Invalid format. Allowed: ${selectedCard.inputFormats.join(', ')}`);
         }
 
         setFiles(prev => [...prev, ...validFiles]);
@@ -160,16 +168,13 @@ export default function ConvertPage() {
             const { jobId: newJobId } = response.data.data;
             setJobId(newJobId);
             setStatus('queued');
-
-            toast.success('Conversion started!');
+            toast.success('Conversion pipeline initiated');
         } catch (err: any) {
             setStatus('failed');
-            setError(err.response?.data?.error?.message || 'Failed to start conversion');
-            toast.error('Conversion failed');
+            setError(err.response?.data?.error?.message || 'Submission failed');
         }
     };
 
-    // Poll for job status
     useEffect(() => {
         if (!jobId || status === 'completed' || status === 'failed' || status === 'idle') return;
 
@@ -184,22 +189,18 @@ export default function ConvertPage() {
                     setStatus('processing');
                 } else if (job.status === 'completed') {
                     setStatus('completed');
-                    toast.success('Conversion completed!');
-
-                    // Auto-fetch blob for preview if it's a PDF output
                     if (selectedCard?.outputFormat === 'pdf') {
                         try {
                             const dlRes = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
                             const url = window.URL.createObjectURL(new Blob([dlRes.data]));
                             setPreviewUrl(url);
                         } catch (e) {
-                            console.error("Failed to fetch preview", e);
+                            console.error("Preview retrieval failed", e);
                         }
                     }
                 } else if (job.status === 'failed') {
                     setStatus('failed');
-                    setError(job.error || 'Conversion failed');
-                    toast.error('Conversion failed');
+                    setError(job.error || 'Pipeline failure');
                 }
             } catch (err) {
                 console.error('Status poll error:', err);
@@ -207,39 +208,37 @@ export default function ConvertPage() {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [jobId, status]);
+    }, [jobId, status, selectedCard]);
 
     const handleDownload = async () => {
-        if (!jobId) return;
-
-        try {
-            const response = await api.get(`/convert/download/${jobId}`, {
-                responseType: 'blob'
-            });
-
-            // Get filename from Content-Disposition header
-            const contentDisposition = response.headers['content-disposition'];
-            let filename = 'converted_file';
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="(.+)"/);
-                if (match) filename = match[1];
+        if (!jobId || !previewUrl) {
+            if (jobId) {
+                try {
+                    const response = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
+                    const contentDisposition = response.headers['content-disposition'];
+                    let filename = 'converted_output';
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="(.+)"/);
+                        if (match) filename = match[1];
+                    }
+                    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (e) { toast.error('Download extraction failed'); }
             }
-
-            // Create blob URL and download
-            const blob = new Blob([response.data]);
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-
-            toast.success('Download started!');
-        } catch (err: any) {
-            toast.error('Download failed');
+            return;
         }
+
+        const link = document.createElement('a');
+        link.href = previewUrl;
+        link.download = `converted_${files[0]?.name.split('.')[0] || 'result'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleReset = () => {
@@ -262,306 +261,359 @@ export default function ConvertPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-            <div className="max-w-6xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-4xl font-bold text-white mb-3">
-                        Document Converter
-                    </h1>
-                    <p className="text-gray-400 text-lg">
-                        Convert documents between formats instantly
-                    </p>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-20"></div>
+            <div className="absolute top-10 left-10 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto">
+                <div className="mb-16">
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center space-y-4"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 border border-white/10 backdrop-blur-md mb-4 group hover:border-blue-500/30 transition-colors">
+                            <Sparkles className="w-4 h-4 text-blue-400 group-hover:animate-spin-slow" />
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Next-Gen Conversion Engine</span>
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+                            Universal <span className="text-gradient-premium">Converter</span>
+                        </h1>
+                        <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto">
+                            Switch document architectures with zero data loss. Powered by our proprietary rendering stack.
+                        </p>
+                    </motion.div>
                 </div>
 
-                {/* Step 1: Select Conversion Type */}
-                {!selectedType && (
+                {!selectedType ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                     >
-                        <h2 className="text-xl font-semibold text-white mb-6">
-                            Select Conversion Type
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {conversionCards.map((card) => (
-                                <motion.button
-                                    key={card.id}
-                                    onClick={() => setSelectedType(card.id)}
-                                    className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} text-white 
-                                        text-left transition-all hover:scale-105 hover:shadow-xl`}
-                                    whileHover={{ y: -5 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <div className="flex items-center gap-4 mb-3">
-                                        {card.icon}
-                                        <div>
-                                            <h3 className="font-bold text-lg">{card.title}</h3>
-                                            <p className="text-sm opacity-90">{card.description}</p>
+                        {conversionCards.map((card, idx) => (
+                            <motion.button
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                key={card.id}
+                                onClick={() => setSelectedType(card.id)}
+                                className={clsx(
+                                    "group relative p-8 rounded-[40px] bg-slate-900/40 border border-white/5 backdrop-blur-3xl text-white text-left overflow-hidden transition-all hover:scale-[1.03] hover:border-white/20 active:scale-95",
+                                    card.glow
+                                )}
+                            >
+                                <div className={clsx(
+                                    "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-5 blur-[60px] group-hover:opacity-10 transition-opacity",
+                                    card.color
+                                )}></div>
+
+                                <div className={clsx(
+                                    "w-16 h-16 rounded-[24px] bg-gradient-to-br p-[1px] mb-8",
+                                    card.color
+                                )}>
+                                    <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
+                                        <card.icon className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 relative z-10">
+                                    <h3 className="text-xl font-black tracking-tight">{card.title}</h3>
+                                    <p className="text-sm text-slate-500 font-medium leading-normal">{card.description}</p>
+                                </div>
+
+                                <div className="mt-8 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-white transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <div className="px-2 py-1 rounded bg-white/5">{card.inputFormats[0]}</div>
+                                        <ArrowRight className="w-3 h-3" />
+                                        <div className="px-2 py-1 rounded bg-white/5">.{card.outputFormat}</div>
+                                    </div>
+                                    <Zap className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-yellow-400" />
+                                </div>
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-4xl mx-auto space-y-8"
+                    >
+                        <div className="flex items-center justify-between">
+                            <button
+                                onClick={() => { setSelectedType(null); handleReset(); }}
+                                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-bold text-sm"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                Return to Matrix
+                            </button>
+                            <div className="px-6 py-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black text-xs uppercase tracking-widest">
+                                {selectedCard!.title} ACTIVE
+                            </div>
+                        </div>
+
+                        <div className="glass-card-premium overflow-hidden border-white/10">
+                            <AnimatePresence mode="wait">
+                                {status === 'idle' ? (
+                                    <motion.div
+                                        key="idle"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="p-12 space-y-12"
+                                    >
+                                        <div
+                                            {...getRootProps()}
+                                            className={clsx(
+                                                "dropzone-premium group h-80 flex items-center justify-center border-dashed cursor-pointer relative",
+                                                isDragActive ? "border-blue-500/50 bg-blue-500/5" : "border-white/5"
+                                            )}
+                                        >
+                                            <input {...getInputProps()} />
+                                            <div className="flex flex-col items-center gap-6 text-center">
+                                                <div className="relative">
+                                                    <div className="w-24 h-24 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                        <Upload className="w-10 h-10 text-blue-400" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-2xl font-black text-white tracking-tight">DROP PAYLOAD HERE</h3>
+                                                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest leading-relaxed">
+                                                        Accepting: {selectedCard!.inputFormats.join(', ')}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
+
+                                        {files.length > 0 && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="space-y-4"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Selected Archives ({files.length})</h3>
+                                                    <button onClick={handleReset} className="text-xs font-bold text-rose-500 hover:underline">Discard All</button>
+                                                </div>
+                                                <div className="grid gap-3">
+                                                    {files.map((file, idx) => (
+                                                        <div key={idx} className="group flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center border border-white/10 group-hover:border-blue-500/30 transition-colors">
+                                                                    <FileText className="w-6 h-6 text-blue-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-black text-white max-w-[400px] truncate">{file.name}</p>
+                                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{formatBytes(file.size)}</p>
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={() => removeFile(idx)} className="p-2 rounded-xl bg-rose-500/10 text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <button
+                                                    onClick={handleConvert}
+                                                    className="w-full btn-premium py-6 group gap-4 mt-8"
+                                                >
+                                                    <RefreshCw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-700" />
+                                                    <span className="text-lg">INITIALIZE PIPELINE</span>
+                                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </motion.div>
+                                ) : (status === 'uploading' || status === 'queued' || status === 'processing') ? (
+                                    <motion.div
+                                        key="processing"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="p-20 flex flex-col items-center justify-center space-y-12"
+                                    >
+                                        <div className="relative">
+                                            <div className="w-32 h-32 rounded-full border-4 border-white/5 border-t-blue-500 animate-spin"></div>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <RefreshCw className="w-10 h-10 text-blue-400/50 animate-pulse" />
+                                            </div>
+                                            <div className="absolute inset-0 bg-blue-500/10 blur-[60px] rounded-full"></div>
+                                        </div>
+
+                                        <div className="text-center space-y-8 w-full max-w-md">
+                                            <div className="space-y-4">
+                                                <h3 className="text-3xl font-black text-white tracking-tight uppercase">
+                                                    {status === 'uploading' ? 'Ingesting Payload' :
+                                                        status === 'queued' ? 'In Queue' : 'Decoupling Data'}
+                                                </h3>
+                                                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Network Speed: Optimized • Engine: Enterprise</p>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                    <span>Progression</span>
+                                                    <span className="text-blue-400">{progress}%</span>
+                                                </div>
+                                                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${progress}%` }}
+                                                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ) : status === 'completed' ? (
+                                    <motion.div
+                                        key="completed"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="p-12 space-y-12"
+                                    >
+                                        <div className="text-center space-y-6">
+                                            <div className="w-24 h-24 rounded-[40px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-2xl animate-float">
+                                                <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-5xl font-black tracking-tighter text-white uppercase">MISSION SUCCESS</h2>
+                                                <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs mt-4">Document Architecture Converted to {selectedCard?.outputFormat}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <button
+                                                onClick={handleDownload}
+                                                className="w-full btn-premium py-6 flex items-center justify-center gap-4 text-lg"
+                                            >
+                                                <Download className="w-6 h-6" />
+                                                <span>EXTRACT ARCHIVE</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setIsShareOpen(true)}
+                                                className="w-full btn-glass py-6 border-white/10 hover:border-blue-500/50 flex items-center justify-center gap-4 text-lg"
+                                            >
+                                                <Share2 className="w-6 h-6 text-blue-400" />
+                                                <span>NETWORK SYNC</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="flex flex-col md:flex-row items-center gap-4 justify-center">
+                                            {previewUrl && (
+                                                <button
+                                                    onClick={() => setShowPreview(!showPreview)}
+                                                    className="px-8 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    {showPreview ? 'TERMINATE PREVIEW' : 'VISUAL VERIFICATION'}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={handleReset}
+                                                className="px-8 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                            >
+                                                <History className="w-4 h-4" />
+                                                COMMENCE NEW JOB
+                                            </button>
+                                        </div>
+
+                                        {showPreview && previewUrl && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 30 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="pt-12 border-t border-white/5 space-y-8"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-xl font-black text-white tracking-tight uppercase">High-Fidelity Preview</h3>
+                                                    <div className="flex items-center gap-4">
+                                                        <button
+                                                            disabled={pageNumber <= 1}
+                                                            onClick={() => setPageNumber(p => p - 1)}
+                                                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 disabled:opacity-30 transition-all"
+                                                        >
+                                                            <ChevronLeft className="w-5 h-5 text-white" />
+                                                        </button>
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                            Page {pageNumber} / {numPages || '...'}
+                                                        </span>
+                                                        <button
+                                                            disabled={numPages ? pageNumber >= numPages : true}
+                                                            onClick={() => setPageNumber(p => p + 1)}
+                                                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 disabled:opacity-30 transition-all"
+                                                        >
+                                                            <ChevronRight className="w-5 h-5 text-white" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-slate-950/80 rounded-[40px] p-8 border border-white/5 flex items-center justify-center min-h-[600px] shadow-inner">
+                                                    <Document
+                                                        file={previewUrl}
+                                                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                                        loading={<Loader2 className="w-12 h-12 animate-spin text-blue-500" />}
+                                                    >
+                                                        <Page
+                                                            pageNumber={pageNumber}
+                                                            width={Math.min(window.innerWidth - 100, 600)}
+                                                            renderTextLayer={false}
+                                                            renderAnnotationLayer={false}
+                                                            className="shadow-[0_40px_100px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden"
+                                                        />
+                                                    </Document>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="failed"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="p-20 text-center space-y-8"
+                                    >
+                                        <div className="w-24 h-24 rounded-[40px] bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
+                                            <XCircle className="w-12 h-12 text-rose-500" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <h3 className="text-3xl font-black text-white uppercase tracking-tight">PIPELINE CRITICAL FAILURE</h3>
+                                            <p className="text-rose-400 font-bold bg-rose-500/5 py-3 px-6 rounded-2xl border border-rose-500/10 inline-block font-mono text-sm">
+                                                ERROR: {error || 'GENERIC_CONVERSION_FAULT'}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleReset}
+                                            className="px-12 py-5 rounded-[32px] bg-white border border-white text-slate-900 font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                        >
+                                            RESTART SYSTEM
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                { icon: Shield, title: 'Safe Protocols', desc: 'Secure Sandbox Extraction' },
+                                { icon: Zap, title: 'Edge Processing', desc: 'Sub-second Latency conversion' },
+                                { icon: FileText, title: 'Preservation', desc: 'Vector Layout Maintenance' }
+                            ].map((feature, i) => (
+                                <div key={i} className="glass-card-premium p-6 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center">
+                                        <feature.icon className="w-6 h-6 text-slate-400" />
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm opacity-80">
-                                        <span>{card.inputFormats.join(', ')}</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                        <span>.{card.outputFormat}</span>
+                                    <div>
+                                        <p className="text-[10px] font-black text-white uppercase tracking-widest">{feature.title}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-tighter">{feature.desc}</p>
                                     </div>
-                                </motion.button>
+                                </div>
                             ))}
                         </div>
                     </motion.div>
                 )}
-
-                {/* Step 2: Upload Files */}
-                {selectedType && selectedCard && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-6"
-                    >
-                        {/* Back button */}
-                        <button
-                            onClick={() => { setSelectedType(null); handleReset(); }}
-                            className="text-gray-400 hover:text-white flex items-center gap-2"
-                        >
-                            ← Back to conversions
-                        </button>
-
-                        {/* Selected conversion header */}
-                        <div className={`p-6 rounded-2xl bg-gradient-to-br ${selectedCard.color} text-white`}>
-                            <div className="flex items-center gap-4">
-                                {selectedCard.icon}
-                                <div>
-                                    <h2 className="text-2xl font-bold">{selectedCard.title}</h2>
-                                    <p className="opacity-90">
-                                        Upload {selectedCard.inputFormats.join(' or ')} files
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Upload Zone */}
-                        {status === 'idle' && (
-                            <div
-                                {...getRootProps()}
-                                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer
-                                    transition-all ${isDragActive
-                                        ? 'border-blue-500 bg-blue-500/10'
-                                        : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'}`}
-                            >
-                                <input {...getInputProps()} />
-                                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-300 mb-2">
-                                    {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
-                                </p>
-                                <p className="text-gray-500 text-sm">
-                                    or click to browse • Max 50MB per file
-                                </p>
-                            </div>
-                        )}
-
-                        {/* File List */}
-                        {files.length > 0 && status === 'idle' && (
-                            <div className="bg-gray-800/50 rounded-xl p-4 space-y-2">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-white font-medium">
-                                        Files ({files.length})
-                                    </h3>
-                                    <button
-                                        onClick={handleReset}
-                                        className="text-gray-400 hover:text-white text-sm"
-                                    >
-                                        Clear all
-                                    </button>
-                                </div>
-                                {files.map((file, index) => (
-                                    <div key={index} className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3">
-                                        <div className="flex items-center gap-3">
-                                            <FileText className="w-5 h-5 text-gray-400" />
-                                            <div>
-                                                <p className="text-white text-sm truncate max-w-[300px]">
-                                                    {file.name}
-                                                </p>
-                                                <p className="text-gray-500 text-xs">
-                                                    {formatBytes(file.size)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => removeFile(index)}
-                                            className="text-gray-400 hover:text-red-400"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Convert Button */}
-                        {files.length > 0 && status === 'idle' && (
-                            <button
-                                onClick={handleConvert}
-                                className={`w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r ${selectedCard.color}
-                                    hover:opacity-90 transition-all flex items-center justify-center gap-2`}
-                            >
-                                <RefreshCw className="w-5 h-5" />
-                                Convert {files.length} file{files.length > 1 ? 's' : ''}
-                            </button>
-                        )}
-
-                        {/* Progress */}
-                        {(status === 'uploading' || status === 'queued' || status === 'processing') && (
-                            <div className="bg-gray-800/50 rounded-xl p-6 text-center">
-                                <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
-                                <h3 className="text-white font-medium mb-2">
-                                    {status === 'uploading' ? 'Uploading...' :
-                                        status === 'queued' ? 'Queued...' : 'Converting...'}
-                                </h3>
-                                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                                    <div
-                                        className={`bg-gradient-to-r ${selectedCard.color} h-2 rounded-full transition-all`}
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <p className="text-gray-400 text-sm">{progress}% complete</p>
-                            </div>
-                        )}
-
-                        {/* Success */}
-                        {status === 'completed' && (
-                            <div className="bg-gray-800/50 rounded-xl p-6 text-center">
-                                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                                <h3 className="text-white font-bold text-xl mb-2">
-                                    Conversion Complete!
-                                </h3>
-                                <p className="text-gray-400 mb-6">
-                                    Your files are ready to download
-                                </p>
-                                <div className="flex gap-4 justify-center">
-                                    <button
-                                        onClick={handleDownload}
-                                        className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl 
-                                            font-bold flex items-center gap-2 transition-all"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                        Download
-                                    </button>
-                                    <button
-                                        onClick={handleReset}
-                                        className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl 
-                                            font-medium transition-all"
-                                    >
-                                        Convert More
-                                    </button>
-                                    <button
-                                        onClick={() => setIsShareOpen(true)}
-                                        className="px-6 py-3 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl 
-                                            font-medium transition-all flex items-center gap-2"
-                                    >
-                                        <Share2 className="w-5 h-5" />
-                                        Share
-                                    </button>
-                                    {previewUrl && (
-                                        <button
-                                            onClick={() => setShowPreview(!showPreview)}
-                                            className="px-6 py-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 rounded-xl 
-                                                font-medium transition-all flex items-center gap-2"
-                                        >
-                                            <Eye className="w-5 h-5" />
-                                            {showPreview ? 'Hide Preview' : 'Preview'}
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Visual Comparison Preview */}
-                                {showPreview && previewUrl && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="mt-8 border-t border-gray-700 pt-8"
-                                    >
-                                        <h3 className="text-white font-bold text-xl mb-6">Visual Verification</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {/* Original (if supported) - Simplified placeholder for now */}
-                                            <div className="bg-gray-900 rounded-xl p-4 border border-gray-700 min-h-[400px] flex flex-col items-center justify-center">
-                                                <div className="text-gray-500 mb-2">Original File</div>
-                                                <FileText className="w-16 h-16 text-gray-600 mb-4" />
-                                                <p className="text-sm text-gray-500 max-w-xs text-center">
-                                                    Original file preview not supported in browser.
-                                                    Please verify using the converted result.
-                                                </p>
-                                            </div>
-
-                                            {/* Converted PDF */}
-                                            <div className="bg-gray-900 rounded-xl p-4 border border-gray-700 min-h-[400px] flex flex-col relative overflow-hidden">
-                                                <div className="text-gray-500 mb-2 text-center">Converted Result (PDF)</div>
-                                                <div className="flex-1 flex items-center justify-center bg-gray-800 rounded-lg overflow-auto max-h-[500px]">
-                                                    <Document
-                                                        file={previewUrl}
-                                                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                                        loading={<Loader2 className="w-8 h-8 animate-spin text-blue-500" />}
-                                                        error={<div className="text-red-400 text-sm">Failed to load preview</div>}
-                                                    >
-                                                        <Page
-                                                            pageNumber={pageNumber}
-                                                            width={350}
-                                                            renderTextLayer={false}
-                                                            renderAnnotationLayer={false}
-                                                        />
-                                                    </Document>
-                                                </div>
-                                                {numPages && numPages > 1 && (
-                                                    <div className="flex justify-center items-center gap-4 mt-4">
-                                                        <button
-                                                            disabled={pageNumber <= 1}
-                                                            onClick={() => setPageNumber(p => p - 1)}
-                                                            className="p-2 bg-gray-800 rounded-full disabled:opacity-50 hover:bg-gray-700"
-                                                        >
-                                                            <ChevronLeft className="w-4 h-4 text-white" />
-                                                        </button>
-                                                        <span className="text-white text-sm">
-                                                            Page {pageNumber} of {numPages}
-                                                        </span>
-                                                        <button
-                                                            disabled={pageNumber >= numPages}
-                                                            onClick={() => setPageNumber(p => p + 1)}
-                                                            className="p-2 bg-gray-800 rounded-full disabled:opacity-50 hover:bg-gray-700"
-                                                        >
-                                                            <ChevronRight className="w-4 h-4 text-white" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Error */}
-                        {status === 'failed' && (
-                            <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-6 text-center">
-                                <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                                <h3 className="text-white font-bold text-xl mb-2">
-                                    Conversion Failed
-                                </h3>
-                                <p className="text-red-400 mb-6">
-                                    {error || 'An error occurred during conversion'}
-                                </p>
-                                <button
-                                    onClick={handleReset}
-                                    className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl 
-                                        font-medium transition-all"
-                                >
-                                    Try Again
-                                </button>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
             </div>
 
-            {/* Share Modal */}
             {jobId && (
                 <ShareModal
                     isOpen={isShareOpen}

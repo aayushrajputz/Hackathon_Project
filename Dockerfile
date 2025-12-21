@@ -39,7 +39,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Create temp directory
-RUN mkdir -p /tmp/brainypdf
+RUN mkdir -p /tmp/binarypdf
 
 # Expose port
 EXPOSE 8080

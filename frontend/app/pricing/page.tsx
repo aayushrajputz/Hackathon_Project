@@ -130,7 +130,7 @@ export default function PricingPage() {
                             <FileText className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                            BrainyPDF
+                            BinaryPDF
                         </span>
                     </Link>
                     <nav className="flex items-center gap-6">
@@ -237,7 +237,7 @@ export default function PricingPage() {
 
             <footer className="relative z-10 py-12 px-6 border-t border-white/10 text-center">
                 <p className="text-gray-500 text-sm">
-                    © 2025 BrainyPDF. All rights reserved. Crafted with ❤️ by Aayush.
+                    © 2025 BinaryPDF. All rights reserved. Crafted with ❤️ by Aayush.
                 </p>
             </footer>
         </div>

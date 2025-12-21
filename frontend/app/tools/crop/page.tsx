@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Crop,
     Download,
@@ -12,12 +12,17 @@ import {
     X,
     Move,
     Share2,
-    Copy
+    ArrowRight,
+    Zap,
+    Maximize,
+    Minimize,
+    Settings,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
 import { api, shareApi } from '@/lib/api';
-import { downloadFile } from '@/lib/utils';
+import clsx from 'clsx';
+import ShareModal from '@/components/ui/ShareModal';
 
 interface CropMargins {
     top: number;
@@ -28,11 +33,10 @@ interface CropMargins {
 
 export default function CropPDFPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [margins, setMargins] = useState<CropMargins>({ top: 0, right: 0, bottom: 0, left: 0 });
+    const [margins, setMargins] = useState<CropMargins>({ top: 10, right: 10, bottom: 10, left: 10 });
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<any>(null);
-    const [shareUrl, setShareUrl] = useState<string | null>(null);
-    const [isSharing, setIsSharing] = useState(false);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
@@ -41,7 +45,7 @@ export default function CropPDFPage() {
         }
     }, []);
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps } = useDropzone({
         onDrop,
         accept: { 'application/pdf': ['.pdf'] },
         multiple: false,
@@ -49,20 +53,14 @@ export default function CropPDFPage() {
 
     const handleClear = () => {
         setFile(null);
-        setMargins({ top: 0, right: 0, bottom: 0, left: 0 });
+        setMargins({ top: 10, right: 10, bottom: 10, left: 10 });
         setResult(null);
-        setShareUrl(null);
     };
 
     const handleCrop = async () => {
-        if (!file) {
-            toast.error('Please upload a PDF file');
-            return;
-        }
+        if (!file) return;
 
         setIsProcessing(true);
-        setResult(null);
-
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -76,9 +74,9 @@ export default function CropPDFPage() {
             });
 
             setResult(response.data.data);
-            toast.success('PDF cropped successfully!');
+            toast.success('Document cropped successfully!');
         } catch (error: any) {
-            toast.error(error.response?.data?.error?.message || 'Failed to crop PDF');
+            toast.error(error.response?.data?.error?.message || 'Failed to crop document');
         } finally {
             setIsProcessing(false);
         }
@@ -99,40 +97,9 @@ export default function CropPDFPage() {
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(blobUrl);
-                toast.success('Download started!');
             } catch (error) {
-                console.error(error);
                 toast.error('Failed to download file');
             }
-        } else if (result?.url) {
-            downloadFile(result.url, result.filename || 'cropped.pdf');
-        }
-    };
-
-    const handleShare = async () => {
-        if (!result?.fileId) {
-            toast.error('No file to share');
-            return;
-        }
-
-        setIsSharing(true);
-        try {
-            const response = await shareApi.create(result.fileId, 'library', 24);
-            const url = response.data.data.url;
-            setShareUrl(url);
-            await navigator.clipboard.writeText(url);
-            toast.success('Share link copied to clipboard!');
-        } catch (error: any) {
-            toast.error(error.response?.data?.error?.message || 'Failed to create share link');
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-    const copyShareUrl = async () => {
-        if (shareUrl) {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success('Link copied!');
         }
     };
 
@@ -145,186 +112,248 @@ export default function CropPDFPage() {
     };
 
     const presetCrops = [
-        { name: 'No Crop', values: { top: 0, right: 0, bottom: 0, left: 0 } },
-        { name: 'Trim Edges', values: { top: 20, right: 20, bottom: 20, left: 20 } },
-        { name: 'Header Only', values: { top: 50, right: 0, bottom: 0, left: 0 } },
-        { name: 'Footer Only', values: { top: 0, right: 0, bottom: 50, left: 0 } },
+        { name: 'Full Canvas', values: { top: 0, right: 0, bottom: 0, left: 0 } },
+        { name: 'Standard Margin', values: { top: 20, right: 20, bottom: 20, left: 20 } },
+        { name: 'Cinema Wide', values: { top: 60, right: 0, bottom: 60, left: 0 } },
+        { name: 'Book Gutter', values: { top: 0, right: 30, bottom: 0, left: 30 } },
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 mb-4">
-                    <Crop className="w-8 h-8 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Crop PDF</h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Adjust page margins and visible area
-                </p>
-            </div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-20"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
 
-            {/* Main Content */}
-            {!result ? (
-                <div className="space-y-6">
-                    {/* Upload */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
-                        {!file ? (
-                            <div
-                                {...getRootProps()}
-                                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${isDragActive
-                                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                                    : 'border-gray-300 dark:border-slate-600 hover:border-amber-400'
-                                    }`}
-                            >
-                                <input {...getInputProps()} />
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                        <Upload className="w-8 h-8 text-amber-600" />
-                                    </div>
-                                    <p className="text-lg font-medium">Drag & drop a PDF file here</p>
-                                    <p className="text-sm text-gray-500">or click to browse</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-                                <FileText className="w-6 h-6 text-amber-600" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{file.name}</p>
-                                    <p className="text-sm text-gray-500">{formatBytes(file.size)}</p>
-                                </div>
-                                <button onClick={handleClear} className="p-2 hover:bg-amber-100 rounded-lg">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* Crop Settings */}
-                    {file && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-6 space-y-6">
-                            <h3 className="font-semibold">Crop Margins (points)</h3>
-
-                            {/* Preset Buttons */}
-                            <div className="flex flex-wrap gap-2">
-                                {presetCrops.map((preset) => (
-                                    <button
-                                        key={preset.name}
-                                        onClick={() => setMargins(preset.values)}
-                                        className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${JSON.stringify(margins) === JSON.stringify(preset.values)
-                                            ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                                            : 'border-gray-200 dark:border-slate-700 hover:border-amber-300'
-                                            }`}
-                                    >
-                                        {preset.name}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Visual Crop Box */}
-                            <div className="flex justify-center py-4">
-                                <div className="relative w-48 h-64 bg-white dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-600 rounded-lg shadow-lg">
-                                    {/* Crop overlay */}
-                                    <div
-                                        className="absolute bg-amber-500/20 border-2 border-amber-500 border-dashed"
-                                        style={{
-                                            top: `${Math.min(margins.top / 2, 40)}px`,
-                                            right: `${Math.min(margins.right / 2, 40)}px`,
-                                            bottom: `${Math.min(margins.bottom / 2, 40)}px`,
-                                            left: `${Math.min(margins.left / 2, 40)}px`,
-                                        }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                        <Move className="w-8 h-8" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Margin Inputs */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
-                                    <div key={side}>
-                                        <label className="block text-sm font-medium capitalize mb-1">{side}</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="200"
-                                            value={margins[side]}
-                                            onChange={(e) => setMargins({ ...margins, [side]: parseFloat(e.target.value) || 0 })}
-                                            className="input-field"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Crop Button */}
-                            <button
-                                onClick={handleCrop}
-                                disabled={isProcessing}
-                                className="btn-primary w-full bg-gradient-to-r from-amber-500 to-yellow-600"
-                            >
-                                {isProcessing ? (
-                                    <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Cropping...</>
-                                ) : (
-                                    <><Crop className="w-5 h-5 mr-2" /> Crop PDF</>
-                                )}
-                            </button>
-                        </motion.div>
-                    )}
-                </div>
-            ) : (
-                /* Result */
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-8 text-center space-y-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30">
-                        <CheckCircle className="w-10 h-10 text-green-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold">Crop Complete!</h2>
-                    <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 text-sm">
-                        Margins: Top {result.margins?.top}pt, Right {result.margins?.right}pt, Bottom {result.margins?.bottom}pt, Left {result.margins?.left}pt
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button onClick={handleDownload} className="btn-primary flex items-center justify-center gap-2">
-                            <Download className="w-5 h-5" /> Download
-                        </button>
-                        <button
-                            onClick={handleShare}
-                            disabled={isSharing}
-                            className="btn-secondary flex items-center justify-center gap-2"
-                        >
-                            {isSharing ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <Share2 className="w-5 h-5" />
-                            )}
-                            {isSharing ? 'Creating Link...' : 'Share'}
-                        </button>
-                        <button onClick={handleClear} className="btn-secondary">Crop Another</button>
-                    </div>
-
-                    {/* Share URL Display */}
-                    {shareUrl && (
-                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                            <p className="text-sm text-green-700 dark:text-green-300 mb-2 font-medium">
-                                Share link created!
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={shareUrl}
-                                    readOnly
-                                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-800 border rounded-lg truncate"
-                                />
-                                <button
-                                    onClick={copyShareUrl}
-                                    className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
+            <div className="relative z-10 max-w-6xl mx-auto">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-6"
+                    >
+                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-yellow-500 p-[1px] shadow-2xl shadow-amber-500/20">
+                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
+                                <Crop className="w-10 h-10 text-amber-400" />
                             </div>
                         </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight">Precision <span className="text-gradient-premium">Crop</span></h1>
+                            <p className="text-slate-400 font-medium mt-1">Refine document canvas and visibility bounds</p>
+                        </div>
+                    </motion.div>
+
+                    {file && !result && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            onClick={handleClear}
+                            className="px-6 py-2.5 rounded-xl text-sm font-bold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-white/5 transition-all flex items-center gap-2"
+                        >
+                            <X className="w-4 h-4" />
+                            Reset Selection
+                        </motion.button>
                     )}
-                </motion.div>
-            )}
+                </div>
+
+                {!result ? (
+                    <div className="grid lg:grid-cols-12 gap-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="lg:col-span-12"
+                        >
+                            <div className="glass-card-premium overflow-hidden border-white/10 grid md:grid-cols-2">
+                                <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/5 bg-slate-900/40">
+                                    {!file ? (
+                                        <div
+                                            {...getRootProps()}
+                                            className="dropzone-premium group h-full min-h-[400px] flex items-center justify-center border-dashed cursor-pointer"
+                                        >
+                                            <input {...getInputProps()} />
+                                            <div className="flex flex-col items-center gap-6 text-center">
+                                                <div className="relative">
+                                                    <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                                        <Upload className="w-10 h-10 text-amber-400" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="text-2xl font-bold text-white tracking-tight uppercase">Import Source PDF</h3>
+                                                    <p className="text-slate-500 font-medium font-mono text-xs tracking-widest leading-loose">READY FOR PRECISION SLICING</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center space-y-12 py-10">
+                                            <div className="relative group">
+                                                <div className="w-56 h-72 bg-slate-950 border-2 border-white/5 rounded-[40px] flex items-center justify-center shadow-2xl relative overflow-hidden group-hover:border-amber-500/30 transition-all">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent"></div>
+
+                                                    {/* Real-time Crop Overlay */}
+                                                    <motion.div
+                                                        layout
+                                                        className="absolute border-2 border-amber-500 border-dashed bg-amber-500/10"
+                                                        style={{
+                                                            top: `${Math.min(margins.top / 2, 80)}px`,
+                                                            right: `${Math.min(margins.right / 2, 80)}px`,
+                                                            bottom: `${Math.min(margins.bottom / 2, 80)}px`,
+                                                            left: `${Math.min(margins.left / 2, 80)}px`,
+                                                        }}
+                                                    />
+
+                                                    <FileText className="w-24 h-24 text-slate-800" />
+                                                </div>
+
+                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full bg-slate-900 border border-amber-500/30 shadow-2xl flex items-center gap-2">
+                                                    <Move className="w-3 h-3 text-amber-400" />
+                                                    <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest whitespace-nowrap">Interactive Bounds</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-xl font-black text-white px-6 truncate max-w-[400px]">{file.name}</p>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-3">{formatBytes(file.size)} ARCHIVE</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="p-8 md:p-12 flex flex-col justify-between space-y-12">
+                                    <div className="space-y-10">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Presets Configurations</h3>
+                                                <Settings className="w-4 h-4 text-slate-700" />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {presetCrops.map((preset) => (
+                                                    <button
+                                                        key={preset.name}
+                                                        onClick={() => setMargins(preset.values)}
+                                                        className={clsx(
+                                                            "px-4 py-3 rounded-2xl border transition-all text-xs font-black uppercase tracking-tight",
+                                                            JSON.stringify(margins) === JSON.stringify(preset.values)
+                                                                ? "bg-amber-500/10 border-amber-500/50 text-white"
+                                                                : "bg-white/5 border-white/5 text-slate-500 hover:border-white/10"
+                                                        )}
+                                                    >
+                                                        {preset.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Manual Vectors (PT)</h3>
+                                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                                {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
+                                                    <div key={side} className="space-y-2">
+                                                        <div className="flex items-center justify-between px-1">
+                                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{side}</label>
+                                                            <span className="text-[10px] font-black text-amber-400">{margins[side]}</span>
+                                                        </div>
+                                                        <div className="relative group">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="200"
+                                                                value={margins[side]}
+                                                                onChange={(e) => setMargins({ ...margins, [side]: parseFloat(e.target.value) || 0 })}
+                                                                className="w-full bg-slate-950 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/10 transition-all outline-none font-black text-lg"
+                                                            />
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                {side === 'top' || side === 'bottom' ? <Minimize className="w-4 h-4 text-slate-600 rotate-90" /> : <Minimize className="w-4 h-4 text-slate-600" />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleCrop}
+                                        disabled={isProcessing || !file}
+                                        className={clsx(
+                                            "w-full btn-premium py-5 group gap-3 mt-4",
+                                            (isProcessing || !file) && "opacity-50 grayscale cursor-not-allowed"
+                                        )}
+                                    >
+                                        {isProcessing ? (
+                                            <>
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                                <span>Recalculating Bounds...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Crop className="w-6 h-6 border-2 border-white/20 rounded p-1" />
+                                                <span>Execute Crop Protocol</span>
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-3xl mx-auto"
+                    >
+                        <div className="glass-card-premium p-12 text-center space-y-12 relative overflow-hidden text-white">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/20 rounded-full blur-[100px] -z-10"></div>
+
+                            <div className="relative">
+                                <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-2xl animate-float">
+                                    <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                </div>
+                                <h2 className="text-4xl font-black tracking-tight">CROP SUCCESSFUL</h2>
+                                <p className="text-slate-400 font-medium mt-2 uppercase tracking-widest text-[10px]">Document Canvas Reconfigured</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {(['top', 'right', 'bottom', 'left'] as const).map(side => (
+                                    <div key={side} className="bg-slate-900 border border-white/5 p-4 rounded-3xl">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{side}</p>
+                                        <p className="text-xl font-black text-white">{result.margins?.[side] || margins[side]}<span className="text-[10px] opacity-30">PT</span></p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-center gap-4">
+                                <button
+                                    onClick={handleDownload}
+                                    className="w-full btn-premium py-5 flex items-center justify-center gap-3"
+                                >
+                                    <Download className="w-6 h-6" />
+                                    <span>Download Result</span>
+                                </button>
+                                <button
+                                    onClick={() => setShareModalOpen(true)}
+                                    className="w-full btn-glass py-5 border-white/10 hover:border-cyan-500/50 flex items-center justify-center gap-3"
+                                >
+                                    <Share2 className="w-5 h-5 text-cyan-400" />
+                                    <span>Encrypted Share</span>
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={handleClear}
+                                className="text-sm font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest"
+                            >
+                                Process New Matrix
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </div>
+
+            <ShareModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                fileId={result?.fileId}
+                fileType="temp"
+            />
         </div>
     );
 }

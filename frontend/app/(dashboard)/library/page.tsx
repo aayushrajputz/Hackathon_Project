@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Library,
+    Library as LibraryIcon,
     Upload,
     Download,
     Trash2,
@@ -21,6 +21,8 @@ import {
     Eye,
     Plus,
     Share2,
+    Sparkles,
+    Filter
 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import toast from 'react-hot-toast';
@@ -32,6 +34,7 @@ import { useAuthStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import ShareModal from '@/components/ui/ShareModal';
 import PDFPreview from '@/components/ui/PDFPreview';
+import clsx from 'clsx';
 
 interface LibraryFile {
     id: string;
@@ -61,13 +64,10 @@ export default function LibraryPage() {
     const [hasFetched, setHasFetched] = useState(false);
     const { user: userFromStore } = useAuthStore();
 
-
-    // New Features State
     const [shareFile, setShareFile] = useState<LibraryFile | null>(null);
     const [previewFile, setPreviewFile] = useState<LibraryFile | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // Fetch blob for preview
     const handlePreview = async (file: LibraryFile) => {
         try {
             const toastId = toast.loading('Loading preview...');
@@ -81,7 +81,6 @@ export default function LibraryPage() {
         }
     };
 
-    // Clean up preview URL
     const closePreview = () => {
         if (previewUrl) window.URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -99,28 +98,15 @@ export default function LibraryPage() {
             });
 
             let data = response.data?.data;
-            if (Array.isArray(data)) {
-                setFiles(data);
-            } else {
-                setFiles([]);
-            }
+            setFiles(Array.isArray(data) ? data : []);
             setHasFetched(true);
         } catch (err: any) {
             console.error('Library fetch error:', err);
-
             if (err.response?.status === 401) {
-                if (!user && !authLoading) {
-                    router.push('/login');
-                } else {
-                    setError('Session expired. Please log in again.');
-                }
-            } else if (err.code === 'ECONNABORTED') {
-                setError('Request timed out. Please try refreshing.');
-                toast.error('Request timed out');
+                if (!user && !authLoading) router.push('/login');
+                else setError('Session expired. Please log in again.');
             } else {
-                const message = err.response?.data?.error?.message || 'Failed to load library';
-                setError(message);
-                toast.error(message);
+                setError(err.response?.data?.error?.message || 'Failed to load library');
             }
             setFiles([]);
             setHasFetched(true);
@@ -129,22 +115,17 @@ export default function LibraryPage() {
         }
     }, [sortBy, sortOrder, search, router, user, authLoading]);
 
-    // Initial fetch - run once on mount
     useEffect(() => {
         fetchLibrary();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
-    // Refetch when sort/search changes
     useEffect(() => {
-        if (hasFetched) {
-            fetchLibrary();
-        }
-    }, [sortBy, sortOrder, search]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (hasFetched) fetchLibrary();
+    }, [sortBy, sortOrder, search]);
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return;
 
-        // Plan-based size check
         const userPlan = userFromStore?.plan || 'free';
         const limits = {
             student: 25 * 1024 * 1024,
@@ -160,30 +141,26 @@ export default function LibraryPage() {
 
         for (const file of acceptedFiles) {
             if (file.size > maxFileSize) {
-                toast.error(`${file.name} is too large. Your plan limit is ${maxFileSize / (1024 * 1024)}MB.`, {
-                    duration: 5000,
-                    icon: '⚠️'
-                });
+                toast.error(`${file.name} is too large. Limit is ${maxFileSize / (1024 * 1024)}MB.`, { icon: '⚠️' });
                 continue;
             }
 
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-
                 await api.post('/library/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 successCount++;
-                notify.uploadSuccess(file.name);
             } catch (error: any) {
-                notify.uploadError(file.name);
+                toast.error(`Failed to upload ${file.name}`);
             }
         }
 
         if (successCount > 0) {
+            toast.success(`Successfully uploaded ${successCount} file(s)`);
             fetchLibrary();
-            import('@/lib/store').then(({ useAuthStore }) => useAuthStore.getState().syncStorage());
+            useAuthStore.getState().syncStorage();
         }
         setIsUploading(false);
         setShowUploadModal(false);
@@ -197,38 +174,24 @@ export default function LibraryPage() {
 
     const handleDownload = async (file: LibraryFile) => {
         try {
-            // Use backend proxy download
-            const response = await api.get(`/library/download/${file.id}`, {
-                responseType: 'blob',
-            });
-
+            const response = await api.get(`/library/download/${file.id}`, { responseType: 'blob' });
             const blob = new Blob([response.data], { type: 'application/pdf' });
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = file.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-
-            notify.customSuccess('Download Started', `Downloading ${file.fileName}...`);
+            downloadFile(window.URL.createObjectURL(blob), file.fileName);
+            toast.success('Download started');
         } catch (error: any) {
-            console.error('Download error:', error);
-            notify.error(error.response?.data?.error?.message || 'Failed to download file');
+            toast.error('Download failed');
         }
     };
 
     const handleDelete = async (fileId: string) => {
         try {
             await api.delete(`/library/${fileId}`);
-            notify.customSuccess('File Deleted', 'File has been permanently deleted.');
+            toast.success('File deleted');
             setFiles(prev => prev.filter(f => f.id !== fileId));
             setDeleteConfirm(null);
-            // Sync storage after delete
-            import('@/lib/store').then(({ useAuthStore }) => useAuthStore.getState().syncStorage());
+            useAuthStore.getState().syncStorage();
         } catch (error) {
-            notify.error('Failed to delete file');
+            toast.error('Deletion failed');
         }
     };
 
@@ -241,393 +204,329 @@ export default function LibraryPage() {
     };
 
     const formatDate = (dateStr: string): string => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', {
+        return new Date(dateStr).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
         });
     };
 
-    const toggleSort = (field: SortField) => {
-        if (sortBy === field) {
-            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortBy(field);
-            setSortOrder('desc');
-        }
-    };
-
     if (authLoading && !hasFetched) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
             </div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                        <Library className="w-6 h-6 text-white" />
+        <div className="relative min-h-screen p-4 md:p-8 overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-20"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-[2rem] bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-[1px] shadow-2xl">
+                            <div className="w-full h-full rounded-[31px] bg-slate-950 flex items-center justify-center">
+                                <LibraryIcon className="w-8 h-8 text-indigo-400" />
+                            </div>
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight">Cloud <span className="text-gradient-premium">Library</span></h1>
+                            <p className="text-slate-400 font-medium">Manage your professional document assets</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Library</h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{files.length} PDFs</p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => setShowUploadModal(true)}
-                    className="btn-primary flex items-center gap-2"
-                >
-                    <Plus className="w-5 h-5" />
-                    Upload PDF
-                </button>
-            </div>
 
-            {/* Toolbar */}
-            <div className="flex items-center gap-4 flex-wrap">
-                {/* Search */}
-                <div className="relative flex-1 min-w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search files..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="input-field pl-10 w-full"
-                    />
-                    {search && (
-                        <button
-                            onClick={() => setSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2"
-                        >
-                            <X className="w-4 h-4 text-gray-400" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Sort */}
-                <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
-                    <button
-                        onClick={() => toggleSort('createdAt')}
-                        className={`p-2 rounded-lg transition-colors ${sortBy === 'createdAt' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                        title="Sort by date"
-                    >
-                        <Calendar className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => toggleSort('name')}
-                        className={`p-2 rounded-lg transition-colors ${sortBy === 'name' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                        title="Sort by name"
-                    >
-                        <SortAsc className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => toggleSort('size')}
-                        className={`p-2 rounded-lg transition-colors ${sortBy === 'size' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                        title="Sort by size"
-                    >
-                        <HardDrive className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => toggleSort('pages')}
-                        className={`p-2 rounded-lg transition-colors ${sortBy === 'pages' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                        title="Sort by pages"
-                    >
-                        <Hash className="w-4 h-4" />
-                    </button>
-                    <div className="w-px h-6 bg-gray-300 dark:bg-slate-600" />
-                    <button
-                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                        className="p-2 rounded-lg"
-                        title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                    >
-                        {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
-                    </button>
-                </div>
-
-                {/* View Mode */}
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
-                    <button
-                        onClick={() => setViewMode('grid')}
-                        className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                    >
-                        <Grid className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow' : ''}`}
-                    >
-                        <List className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Content */}
-            {error ? (
-                <div className="card p-12 text-center">
-                    <div className="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-                        <X className="w-8 h-8 text-red-500" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">Failed to load library</h3>
-                    <p className="text-gray-500 mb-6">{error}</p>
-                    <button
-                        onClick={() => fetchLibrary()}
-                        className="btn-primary"
-                    >
-                        Try Again
-                    </button>
-                </div>
-            ) : isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-                </div>
-            ) : files.length === 0 ? (
-                <div className="card p-12 text-center">
-                    <Library className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Your library is empty</h3>
-                    <p className="text-gray-500 mb-6">Upload PDFs to store them in your personal library</p>
                     <button
                         onClick={() => setShowUploadModal(true)}
-                        className="btn-primary inline-flex items-center gap-2"
+                        className="btn-premium group flex items-center gap-2"
                     >
-                        <Upload className="w-5 h-5" />
-                        Upload your first PDF
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                        Upload Assets
                     </button>
                 </div>
-            ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <AnimatePresence>
-                        {files.map((file) => (
-                            <motion.div
-                                key={file.id}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="card p-4 hover:shadow-lg transition-shadow group"
-                            >
-                                <div className="aspect-[3/4] bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg mb-3 flex items-center justify-center relative">
-                                    <FileText className="w-12 h-12 text-red-400" />
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                        <button
-                                            onClick={() => handleDownload(file)}
-                                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow hover:bg-gray-50"
-                                            title="Download"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (userFromStore?.plan === 'pro' || userFromStore?.plan === 'enterprise') {
-                                                    setShareFile(file);
-                                                } else {
-                                                    toast.error('Public sharing is a Pro feature 🚀', {
-                                                        description: 'Upgrade your plan to share PDFs with anyone!',
-                                                        duration: 4000,
-                                                    } as any);
-                                                    router.push('/pricing');
-                                                }
-                                            }}
-                                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow hover:bg-blue-50 text-blue-500"
-                                            title="Share"
-                                        >
-                                            <Share2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handlePreview(file)}
-                                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow hover:bg-purple-50 text-purple-500"
-                                            title="Preview"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => setDeleteConfirm(file.id)}
-                                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow hover:bg-red-50 text-red-500"
-                                            title="Delete"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                                <h3 className="font-medium text-sm truncate" title={file.fileName} onClick={() => handlePreview(file)}>
-                                    {file.fileName}
-                                </h3>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                    <span>{file.pageCount} pg</span>
-                                    <span>•</span>
-                                    <span>{formatBytes(file.size)}</span>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-1">{formatDate(file.createdAt)}</p>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            ) : (
-                <div className="card divide-y dark:divide-slate-700">
-                    <AnimatePresence>
-                        {files.map((file) => (
-                            <motion.div
-                                key={file.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
-                            >
-                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 flex items-center justify-center flex-shrink-0">
-                                    <FileText className="w-5 h-5 text-red-400" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium truncate">{file.fileName}</h3>
-                                    <div className="flex items-center gap-3 text-xs text-gray-500">
-                                        <span>{file.pageCount} pages</span>
-                                        <span>{formatBytes(file.size)}</span>
-                                        <span>{formatDate(file.createdAt)}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleDownload(file)}
-                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg"
-                                        title="Download"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteConfirm(file.id)}
-                                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            )
-            }
 
-            {/* Share Modal */}
+                {/* Toolbar */}
+                <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors">
+                            <Search className="w-full h-full" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Filter your assets..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-slate-900/50 border border-white/5 focus:border-cyan-500/50 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-slate-500 outline-none backdrop-blur-xl transition-all"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2 p-1 bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl">
+                        {[
+                            { id: 'createdAt', icon: Calendar, label: 'Date' },
+                            { id: 'name', icon: SortAsc, label: 'Name' },
+                            { id: 'size', icon: HardDrive, label: 'Size' },
+                            { id: 'pages', icon: Hash, label: 'Pages' },
+                        ].map((s) => (
+                            <button
+                                key={s.id}
+                                onClick={() => {
+                                    if (sortBy === s.id) setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                                    else { setSortBy(s.id as SortField); setSortOrder('desc'); }
+                                }}
+                                className={clsx(
+                                    "px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all",
+                                    sortBy === s.id
+                                        ? "bg-white/10 text-white shadow-lg"
+                                        : "text-slate-500 hover:text-slate-300"
+                                )}
+                            >
+                                <s.icon className="w-4 h-4" />
+                                <span className="hidden sm:inline">{s.label}</span>
+                                {sortBy === s.id && (
+                                    sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center gap-1 p-1 bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={clsx(
+                                "p-3 rounded-xl transition-all",
+                                viewMode === 'grid' ? "bg-white/10 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                            )}
+                        >
+                            <Grid className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={clsx(
+                                "p-3 rounded-xl transition-all",
+                                viewMode === 'list' ? "bg-white/10 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                            )}
+                        >
+                            <List className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <AnimatePresence mode="wait">
+                    {isLoading ? (
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="py-32 flex flex-col items-center justify-center gap-6"
+                        >
+                            <Loader2 className="w-12 h-12 animate-spin text-cyan-400" />
+                            <p className="text-slate-400 font-bold animate-pulse">Syncing Library...</p>
+                        </motion.div>
+                    ) : files.length === 0 ? (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                            className="glass-card-premium py-32 text-center space-y-6"
+                        >
+                            <div className="w-24 h-24 mx-auto rounded-full bg-slate-800 flex items-center justify-center">
+                                <FileText className="w-10 h-10 text-slate-600" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black text-white">No Assets Found</h3>
+                                <p className="text-slate-400 font-medium max-w-xs mx-auto">Your secure document vault is currently empty. Start uploading to manage your assets.</p>
+                            </div>
+                            <button onClick={() => setShowUploadModal(true)} className="btn-glass text-white border-white/10">
+                                Upload Now
+                            </button>
+                        </motion.div>
+                    ) : viewMode === 'grid' ? (
+                        <motion.div
+                            layout
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+                        >
+                            {files.map((file) => (
+                                <motion.div
+                                    key={file.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="group glass-card-premium p-4 border-white/5 hover:border-cyan-500/30 transition-all duration-500"
+                                >
+                                    <div className="relative aspect-[3/4] bg-slate-950 rounded-2xl mb-4 overflow-hidden flex items-center justify-center group-hover:shadow-[0_0_30px_-5px_rgba(34,211,238,0.2)] transition-all duration-500">
+                                        <FileText className="w-16 h-16 text-rose-500 opacity-50 transition-transform duration-500 group-hover:scale-110" />
+
+                                        {/* Actions Overlay */}
+                                        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3">
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handlePreview(file)} className="p-3 rounded-xl bg-white/10 hover:bg-cyan-500 text-white transition-all scale-90 group-hover:scale-100">
+                                                    <Eye className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => handleDownload(file)} className="p-3 rounded-xl bg-white/10 hover:bg-emerald-500 text-white transition-all scale-90 delay-75 group-hover:scale-100">
+                                                    <Download className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setShareFile(file)} className="p-3 rounded-xl bg-white/10 hover:bg-indigo-500 text-white transition-all scale-90 delay-100 group-hover:scale-100">
+                                                    <Share2 className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => setDeleteConfirm(file.id)} className="p-3 rounded-xl bg-white/10 hover:bg-rose-500 text-white transition-all scale-90 delay-150 group-hover:scale-100">
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold text-white truncate text-sm" title={file.fileName}>{file.fileName}</h3>
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                            <span>{file.pageCount} Pages</span>
+                                            <span>{formatBytes(file.size)}</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    ) : (
+                        <motion.div layout className="glass-card-premium divide-y divide-white/5 overflow-hidden">
+                            {files.map((file) => (
+                                <motion.div
+                                    key={file.id}
+                                    layout
+                                    className="flex items-center justify-between gap-4 p-4 hover:bg-white/5 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                                            <FileText className="w-6 h-6 text-rose-500" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-white font-bold truncate">{file.fileName}</h3>
+                                            <p className="text-xs text-slate-500 flex items-center gap-2">
+                                                <span>{formatDate(file.createdAt)}</span>
+                                                <span className="w-1 h-1 bg-slate-700 rounded-full" />
+                                                <span>{file.pageCount} Pages</span>
+                                                <span className="w-1 h-1 bg-slate-700 rounded-full" />
+                                                <span>{formatBytes(file.size)}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => handlePreview(file)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                                            <Eye className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => handleDownload(file)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                                            <Download className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => setDeleteConfirm(file.id)} className="p-2.5 rounded-xl bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 transition-all">
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Upload Modal */}
+            <AnimatePresence>
+                {showUploadModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+                        onClick={() => !isUploading && setShowUploadModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="glass-card-premium p-8 max-w-xl w-full border-white/10 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="space-y-1">
+                                    <h2 className="text-2xl font-black text-white">Upload Assets</h2>
+                                    <p className="text-slate-400 text-sm">Securely store your PDFs in the cloud</p>
+                                </div>
+                                <button onClick={() => !isUploading && setShowUploadModal(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div
+                                {...getRootProps()}
+                                className={clsx(
+                                    "dropzone-premium group bg-slate-950/40 h-[300px] flex items-center justify-center",
+                                    isUploading && "opacity-50 pointer-events-none"
+                                )}
+                            >
+                                <input {...getInputProps()} disabled={isUploading} />
+                                <div className="flex flex-col items-center gap-6 group text-center">
+                                    {isUploading ? (
+                                        <>
+                                            <div className="relative">
+                                                <Loader2 className="w-16 h-16 animate-spin text-cyan-400" />
+                                                <div className="absolute inset-0 blur-xl bg-cyan-400/20" />
+                                            </div>
+                                            <p className="text-white font-black animate-pulse">Encoding Documents...</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                                <Upload className="w-10 h-10 text-cyan-400" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-xl font-bold text-white">Drop PDFs Here</h3>
+                                                <p className="text-slate-500 text-sm font-medium">Bulk upload supported • Premium Security</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation */}
+            <AnimatePresence>
+                {deleteConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="glass-card-premium p-8 max-w-sm w-full border-rose-500/20 shadow-2xl text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-6">
+                                <Trash2 className="w-8 h-8 text-rose-500" />
+                            </div>
+                            <h2 className="text-2xl font-black text-white mb-2">Delete Asset?</h2>
+                            <p className="text-slate-400 text-sm mb-8 font-medium">This document will be permanently purged from your cloud workspace.</p>
+                            <div className="flex gap-4">
+                                <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-6 py-4 rounded-2xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all">Cancel</button>
+                                <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 px-6 py-4 rounded-2xl bg-rose-500 text-white font-bold shadow-lg shadow-rose-500/20 hover:scale-105 transition-transform">Purge</button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Preview & Share Components */}
+            <AnimatePresence>
+                {previewUrl && previewFile && (
+                    <PDFPreview fileUrl={previewUrl} onClose={closePreview} title={previewFile.fileName} />
+                )}
+            </AnimatePresence>
+
             <ShareModal
                 isOpen={!!shareFile}
                 onClose={() => setShareFile(null)}
                 fileId={shareFile?.id || ''}
                 fileType="library"
             />
-
-            {/* Preview Modal */}
-            <AnimatePresence>
-                {previewUrl && previewFile && (
-                    <PDFPreview
-                        fileUrl={previewUrl}
-                        onClose={closePreview}
-                        title={previewFile.fileName}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* Upload Modal */}
-            <AnimatePresence>
-                {showUploadModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                        onClick={() => !isUploading && setShowUploadModal(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-lg w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold">Upload PDFs</h2>
-                                <button
-                                    onClick={() => !isUploading && setShowUploadModal(false)}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div
-                                {...getRootProps()}
-                                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${isDragActive
-                                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                    : 'border-gray-300 dark:border-slate-600 hover:border-primary-400'
-                                    } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                                <input {...getInputProps()} disabled={isUploading} />
-                                {isUploading ? (
-                                    <div className="flex flex-col items-center gap-3">
-                                        <Loader2 className="w-12 h-12 animate-spin text-primary-500" />
-                                        <p>Uploading...</p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-3">
-                                        <Upload className="w-12 h-12 text-gray-400" />
-                                        <p className="font-medium">Drop PDFs here or click to browse</p>
-                                        <p className="text-sm text-gray-500">Up to 50MB per file</p>
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Delete Confirmation Modal */}
-            <AnimatePresence>
-                {deleteConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                        onClick={() => setDeleteConfirm(null)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-sm w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <h2 className="text-xl font-bold mb-2">Delete File?</h2>
-                            <p className="text-gray-600 dark:text-gray-400 mb-6">
-                                This action cannot be undone. The file will be permanently deleted.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="btn-secondary flex-1"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(deleteConfirm)}
-                                    className="btn-primary flex-1 bg-red-500 hover:bg-red-600"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            {/* Share Modal */}
-            <ShareModal
-                isOpen={shareFile !== null}
-                fileId={shareFile?.id || ''}
-                fileType="library"
-                onClose={() => setShareFile(null)}
-            />
-        </div >
+        </div>
     );
 }

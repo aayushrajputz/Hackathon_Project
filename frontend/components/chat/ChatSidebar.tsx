@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Sparkles } from 'lucide-react';
+import { Send, User, Bot, Loader2, Sparkles, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import clsx from 'clsx';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -33,7 +34,6 @@ export default function ChatSidebar({ messages, onSendMessage, isProcessing }: C
         const message = input;
         setInput('');
 
-        // Reset height
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
         }
@@ -56,74 +56,87 @@ export default function ChatSidebar({ messages, onSendMessage, isProcessing }: C
     };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800">
+        <div className="flex flex-col h-full bg-slate-950/20 backdrop-blur-xl border-l border-white/5">
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-                    <Sparkles className="w-5 h-5" />
-                    <h2 className="font-semibold">Chat with PDF</h2>
+            <div className="p-6 border-b border-white/5 bg-white/5">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-sm font-black text-white uppercase tracking-tighter">AI Knowledge Base</h2>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Model Online</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-premium">
                 {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 space-y-4">
-                        <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
-                            <Bot className="w-8 h-8 text-indigo-500" />
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+                            <Bot className="w-8 h-8 text-indigo-400" />
                         </div>
-                        <div>
-                            <p className="text-gray-900 dark:text-white font-medium">Ask anything!</p>
-                            <p className="text-sm mt-1">
-                                "Summarize this document"<br />
-                                "What are the key dates?"<br />
-                                "Explain the conclusion"
+                        <div className="space-y-2">
+                            <p className="text-white font-bold">Ask anything!</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-loose">
+                                &quot;Summarize highlights&quot;<br />
+                                &quot;Find key dates&quot;<br />
+                                &quot;Explain formula&quot;
                             </p>
                         </div>
                     </div>
                 ) : (
                     messages.map((msg, idx) => (
-                        <div
+                        <motion.div
                             key={idx}
-                            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={clsx(
+                                "flex gap-4",
+                                msg.role === 'user' ? 'flex-row-reverse' : ''
+                            )}
                         >
-                            <div className={`
-                                w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                                ${msg.role === 'user'
-                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-                                    : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600'}
-                            `}>
-                                {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                            <div className={clsx(
+                                "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border",
+                                msg.role === 'user'
+                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                            )}>
+                                {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                             </div>
-                            <div className={`
-                                max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
-                                ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-tl-none'}
-                            `}>
+                            <div className={clsx(
+                                "max-w-[85%] rounded-[20px] px-4 py-3 text-sm leading-relaxed",
+                                msg.role === 'user'
+                                    ? 'bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-600/20'
+                                    : 'bg-white/5 text-slate-300 rounded-tl-none border border-white/5'
+                            )}>
                                 {msg.content}
                             </div>
-                        </div>
+                        </motion.div>
                     ))
                 )}
 
                 {isProcessing && (
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                            <Bot className="w-4 h-4" />
+                    <div className="flex gap-4">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0 animate-pulse">
+                            <Bot className="w-5 h-5" />
                         </div>
-                        <div className="bg-gray-100 dark:bg-slate-800 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                            <span className="text-sm text-gray-500">Thinking...</span>
+                        <div className="bg-white/5 border border-white/5 rounded-[20px] rounded-tl-none px-4 py-3 flex items-center gap-3">
+                            <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">AI is thinking...</span>
                         </div>
                     </div>
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <form onSubmit={handleSubmit} className="relative">
+            {/* Input Overlay */}
+            <div className="p-6 bg-slate-950/40 border-t border-white/5">
+                <form onSubmit={handleSubmit} className="relative group">
                     <textarea
                         ref={textareaRef}
                         value={input}
@@ -132,14 +145,14 @@ export default function ChatSidebar({ messages, onSendMessage, isProcessing }: C
                             adjustHeight();
                         }}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask a question..."
+                        placeholder="Type a message..."
                         rows={1}
-                        className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none max-h-[120px] scrollbar-thin"
+                        className="w-full pl-6 pr-14 py-4 bg-white/5 border border-white/5 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium text-slate-300 max-h-[120px] scrollbar-thin placeholder-slate-600"
                     />
                     <button
                         type="submit"
                         disabled={!input.trim() || isProcessing}
-                        className="absolute right-2 bottom-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="absolute right-3 bottom-3 p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-600/20"
                     >
                         <Send className="w-4 h-4" />
                     </button>

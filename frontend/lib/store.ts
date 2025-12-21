@@ -115,6 +115,7 @@ export const useAuthStore = create<AuthState>()(
                 } catch (error) {
                     localStorage.removeItem('authToken');
                     set({ user: null, isAuthenticated: false });
+                    useNotificationStore.getState().clearAll();
                 } finally {
                     set({ isLoading: false });
                 }
@@ -243,18 +244,7 @@ export const useNotificationStore = create<NotificationState>()(
                     const response = await api.get('/notifications');
                     const backendNotifs = response.data.data.notifications || [];
 
-                    if (backendNotifs.length === 0) return;
-
                     set((state) => {
-                        // Merge backend notifications, avoiding duplicates by title/message + approximate time, 
-                        // or just prepend new ones. 
-                        // Since backend provides ID, we can use that. Local ones have random IDs.
-                        // Strategy: Just add them if they don't exist in local state by some criteria or rely on backend entirely?
-                        // Simplified: We'll prepend them. In a real app we'd sync properly.
-                        // For now, let's just REPLACE local notifications with backend ones to ensure "it works" as user requested, 
-                        // but keep local ones if they are "system" notifications?
-                        // User request implies "notification is not come", so we want the backend ones to show up.
-
                         const incoming = backendNotifs.map((bn: any) => ({
                             id: bn.id,
                             title: bn.title,

@@ -98,7 +98,7 @@ export default function HomePage() {
                             <FileText className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            BrainyPDF
+                            BinaryPDF
                         </span>
                     </Link>
 
@@ -268,7 +268,7 @@ export default function HomePage() {
                                 Ready to Transform Your PDFs?
                             </h2>
                             <p className="text-white/80 text-xl max-w-2xl mx-auto mb-10">
-                                Join 500K+ professionals who trust BrainyPDF. Start free — no credit card required.
+                                Join 500K+ professionals who trust BinaryPDF. Start free — no credit card required.
                             </p>
                             <div className="flex flex-wrap gap-4 justify-center">
                                 <Link href="/login" className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-100 transition-colors text-lg shadow-xl flex items-center gap-2">
@@ -293,7 +293,7 @@ export default function HomePage() {
                                 <FileText className="w-5 h-5 text-white" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                BrainyPDF
+                                BinaryPDF
                             </span>
                         </div>
                         <div className="flex items-center gap-6 text-gray-400 text-sm">
@@ -301,7 +301,7 @@ export default function HomePage() {
                             <Link href="/login" className="hover:text-white transition-colors">Login</Link>
                         </div>
                         <p className="text-gray-500 text-sm">
-                            © 2025 BrainyPDF. Crafted with ❤️ by Aayush
+                            © 2025 BinaryPDF. Crafted with ❤️ by Aayush
                         </p>
                     </div>
                 </div>

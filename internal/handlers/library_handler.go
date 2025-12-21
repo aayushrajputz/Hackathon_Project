@@ -106,7 +106,13 @@ func (h *LibraryHandler) Upload(c *gin.Context) {
 	}
 
 	// Get page count
-	pageCount, _ := h.pdfService.GetPageCount(data)
+	pageCount, err := h.pdfService.GetPageCount(data)
+	if err != nil {
+		fmt.Printf("Warning: Failed to get page count for %s: %v\n", header.Filename, err)
+        // Keep pageCount as 0 or set to 1 as fallback? 
+        // 0 is technically correct if we don't know, but 1 is safer for UI.
+        // Let's keep 0 but log it.
+	}
 
 	// Generate unique file key
 	fileID := primitive.NewObjectID()

@@ -178,13 +178,16 @@ func (h *ShareHandler) GetShare(c *gin.Context) {
 		// Notify owner (avoid self-notification would require checking creatorID vs current user, 
 		// but this is public link so usually anonymous viewer)
 		if share.CreatorID != "" {
-			h.notificationService.CreateNotification(
-				context.Background(),
-				share.CreatorID,
-				"File Viewed",
-				fmt.Sprintf("Your shared file '%s' was viewed.", share.Filename),
-				models.NotificationTypeInfo,
-			)
+			var user models.User
+			if err := h.db.Collection("users").FindOne(context.Background(), bson.M{"firebaseUid": share.CreatorID}).Decode(&user); err == nil {
+				h.notificationService.CreateNotification(
+					context.Background(),
+					user.ID.Hex(),
+					"File Viewed",
+					fmt.Sprintf("Your shared file '%s' was viewed.", share.Filename),
+					models.NotificationTypeInfo,
+				)
+			}
 		}
 	}()
 
@@ -245,13 +248,16 @@ func (h *ShareHandler) Download(c *gin.Context) {
 
 		// Notify owner
 		if share.CreatorID != "" {
-			h.notificationService.CreateNotification(
-				context.Background(),
-				share.CreatorID,
-				"File Downloaded",
-				fmt.Sprintf("Your shared file '%s' was downloaded.", share.Filename),
-				models.NotificationTypeSuccess,
-			)
+			var user models.User
+			if err := h.db.Collection("users").FindOne(context.Background(), bson.M{"firebaseUid": share.CreatorID}).Decode(&user); err == nil {
+				h.notificationService.CreateNotification(
+					context.Background(),
+					user.ID.Hex(),
+					"File Downloaded",
+					fmt.Sprintf("Your shared file '%s' was downloaded.", share.Filename),
+					models.NotificationTypeSuccess,
+				)
+			}
 		}
 	}()
 
@@ -275,26 +281,60 @@ func (h *ShareHandler) Download(c *gin.Context) {
 	}
 
 	// Fetch actual document record to get MinIO path
+	var bucketName, objectName, filename, mimeType string
+
+	// Try fetching from 'documents' collection first
 	var doc models.Document
-
 	err = h.db.Collection("documents").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&doc)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Original file not found"})
-		return
+	if err == nil {
+		parts := strings.SplitN(doc.MinIOPath, "/", 2)
+		if len(parts) == 2 {
+			bucketName = parts[0]
+			objectName = parts[1]
+		}
+		filename = doc.OriginalName
+		mimeType = doc.MimeType
+	} else {
+		// Fallback: Try fetching from 'library' collection
+		var libItem LibraryItem
+		err = h.db.Collection("library").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&libItem)
+		if err == nil {
+            // Library items only store the object name (FileKey)
+            // The bucket is the configured user files bucket
+            bucketName = h.minioClient.GetBucketUserFiles()
+            objectName = libItem.FileKey
+            
+            filename = libItem.FileName
+            mimeType = libItem.MimeType
+		} else {
+            // Not found in either
+            c.JSON(http.StatusNotFound, gin.H{"error": "Original file not found in library or documents"})
+            return
+        }
 	}
 
-	// Parse bucket and object path from doc.MinIOPath (format: bucket/path/to/file)
-	parts := strings.SplitN(doc.MinIOPath, "/", 2)
-	if len(parts) != 2 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid file path in storage"})
-		return
-	}
-	bucketName := parts[0]
-	objectName := parts[1]
+    // Prepare for download if we found the object
+    if bucketName == "" || objectName == "" {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid file path configuration"})
+        return
+    }
 
-	// Get file info for size
+    fmt.Printf("[DEBUG] Share Download: Bucket='%s', Object='%s'\n", bucketName, objectName)
+
+	// Get file info for size (verify)
 	info, err := h.minioClient.GetFileInfo(context.Background(), bucketName, objectName)
 	if err != nil {
+        fmt.Printf("[DEBUG] File info check failed: %v\n", err)
+        
+        // DEBUG: List top files in the bucket to see what is there
+        fmt.Printf("[DEBUG] Listing up to 10 files in bucket '%s'...\n", bucketName)
+        files, listErr := h.minioClient.ListObjects(context.Background(), bucketName, "")
+        if listErr != nil {
+            fmt.Printf("[DEBUG] Failed to list objects: %v\n", listErr)
+        } else {
+            fmt.Printf("[DEBUG] Found files: %v\n", files)
+        }
+
 		c.JSON(http.StatusNotFound, gin.H{"error": "File not found in storage"})
 		return
 	}
@@ -308,7 +348,7 @@ func (h *ShareHandler) Download(c *gin.Context) {
 	defer object.Close()
 
 	// Set headers
-	contentType := doc.MimeType
+	contentType := mimeType
 	if contentType == "" {
 		contentType = "application/pdf"
 	}
@@ -316,8 +356,8 @@ func (h *ShareHandler) Download(c *gin.Context) {
 	// Determine filename for download
 	downloadFilename := share.Filename
 	// If share filename is generic "shared_file" or lacks extension, try to use original filename
-	if (downloadFilename == "shared_file" || filepath.Ext(downloadFilename) == "") && doc.OriginalName != "" {
-		downloadFilename = doc.OriginalName
+	if (downloadFilename == "shared_file" || filepath.Ext(downloadFilename) == "") && filename != "" {
+		downloadFilename = filename
 	}
 	// Ultimate fallback
 	if filepath.Ext(downloadFilename) == "" {

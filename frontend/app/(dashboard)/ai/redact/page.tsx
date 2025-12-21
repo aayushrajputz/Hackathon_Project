@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Loader2, Copy, RotateCcw, Sparkles, Eye, EyeOff, Check } from 'lucide-react';
+import { ShieldCheck, Loader2, Copy, RotateCcw, Sparkles, Eye, EyeOff, Check, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PDFDropzone from '@/components/pdf/PDFDropzone';
 import { aiApi } from '@/lib/api';
+import clsx from 'clsx';
 
 type RedactionType = 'email' | 'phone' | 'ssn' | 'credit_card';
 
@@ -13,14 +14,14 @@ interface RedactionOption {
     id: RedactionType;
     label: string;
     icon: string;
-    color: string;
+    description: string;
 }
 
 const redactionOptions: RedactionOption[] = [
-    { id: 'email', label: 'Emails', icon: '📧', color: 'from-blue-500 to-cyan-500' },
-    { id: 'phone', label: 'Phone Numbers', icon: '📱', color: 'from-green-500 to-emerald-500' },
-    { id: 'ssn', label: 'SSN', icon: '🔒', color: 'from-red-500 to-rose-500' },
-    { id: 'credit_card', label: 'Credit Cards', icon: '💳', color: 'from-orange-500 to-amber-500' },
+    { id: 'email', label: 'Emails', icon: '📧', description: 'Hide all email addresses' },
+    { id: 'phone', label: 'Phone Numbers', icon: '📱', description: 'Hide telephone contacts' },
+    { id: 'ssn', label: 'SSN', icon: '🔒', description: 'Social security numbers' },
+    { id: 'credit_card', label: 'Credit Cards', icon: '💳', description: 'Financial card details' },
 ];
 
 export default function IntelligentRedactionPage() {
@@ -31,7 +32,6 @@ export default function IntelligentRedactionPage() {
     const [result, setResult] = useState<{ maskedText: string; maskedCount: number } | null>(null);
     const [displayText, setDisplayText] = useState('');
     const [showOriginal, setShowOriginal] = useState(false);
-    const [originalText, setOriginalText] = useState('');
     const [copied, setCopied] = useState(false);
 
     const toggleType = (type: RedactionType) => {
@@ -47,21 +47,15 @@ export default function IntelligentRedactionPage() {
         const chars = finalText.split('');
         const redactedIndices: number[] = [];
 
-        // Find indices of redacted blocks (█ characters)
         chars.forEach((char, i) => {
             if (char === '█' || char === '*') {
                 redactedIndices.push(i);
             }
         });
 
-        // Show original first, then animate redaction
-        let currentText = finalText.replace(/[█*]+/g, (match) => {
-            // Replace redacted blocks with placeholder text initially
-            return '░'.repeat(match.length);
-        });
+        let currentText = finalText.replace(/[█*]+/g, (match) => '░'.repeat(match.length));
         setDisplayText(currentText);
 
-        // Animate each redacted block
         let animationIndex = 0;
         const animationInterval = setInterval(() => {
             if (animationIndex >= redactedIndices.length) {
@@ -71,19 +65,17 @@ export default function IntelligentRedactionPage() {
                 return;
             }
 
-            // Update text progressively
             const newText = chars.slice(0, animationIndex + 1).join('') +
                 currentText.slice(animationIndex + 1);
             setDisplayText(newText);
-            animationIndex += 3; // Animate 3 characters at a time for speed
+            animationIndex += 5;
         }, 10);
 
-        // Fallback: ensure final text is shown
         setTimeout(() => {
             clearInterval(animationInterval);
             setDisplayText(finalText);
             setIsAnimating(false);
-        }, 2000);
+        }, 3000);
     }, []);
 
     const handleRedact = async () => {
@@ -93,7 +85,7 @@ export default function IntelligentRedactionPage() {
         }
 
         if (selectedTypes.length === 0) {
-            toast.error('Please select at least one data type to redact');
+            toast.error('Select at least one data type');
             return;
         }
 
@@ -109,25 +101,16 @@ export default function IntelligentRedactionPage() {
                 maskedText: data.maskedText,
                 maskedCount: data.maskedCount,
             });
-            setOriginalText(data.maskedText); // Store for toggle
 
-            // Start animation
             animateRedaction(data.maskedText);
 
             if (data.maskedCount > 0) {
-                toast.success(`Successfully redacted ${data.maskedCount} sensitive item(s)!`);
+                toast.success(`${data.maskedCount} item(s) protected!`);
             } else {
-                toast.success('No sensitive data found to redact');
+                toast.success('Privacy check complete');
             }
         } catch (error: any) {
-            console.error('Redaction error:', error);
-            if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-                toast.error('Request timed out. Please try with a smaller document.');
-            } else if (error.response?.status === 503) {
-                toast.error('AI service is not available.');
-            } else {
-                toast.error(error.response?.data?.error?.message || 'Failed to redact document.');
-            }
+            toast.error(error.response?.data?.error?.message || 'Failed to redact document.');
         } finally {
             setIsProcessing(false);
         }
@@ -138,10 +121,10 @@ export default function IntelligentRedactionPage() {
         try {
             await navigator.clipboard.writeText(result.maskedText);
             setCopied(true);
-            toast.success('Copied to clipboard!');
+            toast.success('Safely copied!');
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            toast.error('Failed to copy');
+            toast.error('Copy failed');
         }
     };
 
@@ -149,147 +132,161 @@ export default function IntelligentRedactionPage() {
         setFiles([]);
         setResult(null);
         setDisplayText('');
-        setOriginalText('');
         setShowOriginal(false);
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 mb-4 shadow-2xl shadow-purple-500/30"
-                >
-                    <ShieldCheck className="w-10 h-10 text-white" />
-                </motion.div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-                    Intelligent Redaction
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
-                    Watch AI scan & black out sensitive data in real-time
-                </p>
-            </div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden">
+            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-40"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
 
-            {/* Main Content */}
-            <AnimatePresence mode="wait">
-                {!result ? (
+            <div className="relative z-10 max-w-5xl mx-auto">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
                     <motion.div
-                        key="upload"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="card p-8 space-y-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-6"
                     >
-                        <PDFDropzone
-                            files={files}
-                            onFilesChange={setFiles}
-                            multiple={false}
-                            maxFiles={1}
-                        />
-
-                        {/* Redaction Type Selection */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-purple-500" />
-                                Select Data Types to Redact
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {redactionOptions.map((option) => (
-                                    <motion.button
-                                        key={option.id}
-                                        onClick={() => toggleType(option.id)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${selectedTypes.includes(option.id)
-                                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                                            }`}
-                                    >
-                                        <div className="text-2xl mb-2">{option.icon}</div>
-                                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                            {option.label}
-                                        </div>
-                                        {selectedTypes.includes(option.id) && (
-                                            <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center"
-                                            >
-                                                <Check className="w-3 h-3 text-white" />
-                                            </motion.div>
-                                        )}
-                                    </motion.button>
-                                ))}
+                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-500 p-[1px] shadow-2xl shadow-purple-500/20">
+                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
+                                <ShieldCheck className="w-10 h-10 text-violet-400" />
                             </div>
                         </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-white tracking-tight">AI <span className="text-gradient-premium">Redactor</span></h1>
+                            <p className="text-slate-400 font-medium mt-1">Intelligent masking for confidential data</p>
+                        </div>
+                    </motion.div>
 
-                        {/* Redact Button */}
+                    {result && (
                         <motion.button
-                            onClick={handleRedact}
-                            disabled={files.length === 0 || isProcessing || selectedTypes.length === 0}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white font-semibold text-lg shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            onClick={handleReset}
+                            className="btn-glass text-white"
                         >
-                            {isProcessing ? (
-                                <>
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                    <span>Scanning Document...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <ShieldCheck className="w-6 h-6" />
-                                    <span>Redact Sensitive Data</span>
-                                </>
-                            )}
+                            Redact Another
                         </motion.button>
+                    )}
+                </div>
+
+                {!result ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-8"
+                    >
+                        <div className="glass-card-premium p-8">
+                            <div className="space-y-10">
+                                <PDFDropzone
+                                    files={files}
+                                    onFilesChange={setFiles}
+                                    multiple={false}
+                                    maxFiles={1}
+                                    disabled={isProcessing}
+                                />
+
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <Sparkles className="w-5 h-5 text-violet-400" />
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                            Select Protection Rules
+                                        </h3>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {redactionOptions.map((option) => (
+                                            <button
+                                                key={option.id}
+                                                onClick={() => toggleType(option.id)}
+                                                className={clsx(
+                                                    "p-5 rounded-2xl border-2 transition-all text-left relative overflow-hidden group",
+                                                    selectedTypes.includes(option.id)
+                                                        ? "border-violet-500 bg-violet-500/10 shadow-lg shadow-violet-500/10"
+                                                        : "border-white/5 bg-white/5 hover:border-white/10"
+                                                )}
+                                            >
+                                                <div className="text-2xl mb-3 group-hover:scale-110 transition-transform">{option.icon}</div>
+                                                <p className={clsx(
+                                                    "font-bold text-sm",
+                                                    selectedTypes.includes(option.id) ? "text-white" : "text-slate-400"
+                                                )}>{option.label}</p>
+                                                <p className="text-[10px] text-slate-500 mt-1 font-medium">{option.description}</p>
+                                                {selectedTypes.includes(option.id) && (
+                                                    <div className="absolute top-3 right-3">
+                                                        <Check className="w-4 h-4 text-violet-500" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {files.length > 0 && (
+                                    <button
+                                        onClick={handleRedact}
+                                        disabled={isProcessing || selectedTypes.length === 0}
+                                        className={clsx(
+                                            "w-full btn-premium shadow-xl py-5",
+                                            (isProcessing || selectedTypes.length === 0) && "opacity-50 cursor-not-allowed"
+                                        )}
+                                    >
+                                        {isProcessing ? (
+                                            <div className="flex items-center gap-3">
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                                <span className="text-lg">AI is wiping sensitive data...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <Shield className="w-6 h-6" />
+                                                <span className="text-lg">Apply Redaction</span>
+                                            </div>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </motion.div>
                 ) : (
                     <motion.div
-                        key="result"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="card p-8 space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-8"
                     >
-                        {/* Result Header */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
-                                    <ShieldCheck className="w-6 h-6 text-white" />
+                        <div className="glass-card-premium overflow-hidden">
+                            <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                                        <ShieldCheck className="w-5 h-5 text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white uppercase tracking-tighter">Masked Document Preview</h3>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase">{result.maskedCount} entities secured</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                                        Redaction Complete!
-                                    </h3>
-                                    <p className="text-gray-500">
-                                        {result.maskedCount} item{result.maskedCount !== 1 ? 's' : ''} redacted
-                                    </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleCopy}
+                                        className="btn-glass text-xs py-2 px-4 h-10"
+                                    >
+                                        {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                                        <span className="ml-2">{copied ? 'Copied' : 'Copy Text'}</span>
+                                    </button>
+                                    <button
+                                        onClick={handleReset}
+                                        className="btn-glass text-xs py-2 px-4 h-10"
+                                    >
+                                        <RotateCcw className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setShowOriginal(!showOriginal)}
-                                    className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                    title={showOriginal ? 'Show redacted' : 'Show original'}
-                                >
-                                    {showOriginal ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Redacted Text Display */}
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 rounded-xl blur-xl" />
-                            <div className="relative bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
-                                <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+                            <div className="p-8 bg-slate-950/50">
+                                <pre className="whitespace-pre-wrap font-mono text-sm text-slate-300 leading-loose">
                                     {isAnimating ? (
                                         <motion.span
-                                            initial={{ opacity: 0.5 }}
+                                            initial={{ opacity: 0.8 }}
                                             animate={{ opacity: 1 }}
-                                            transition={{ repeat: Infinity, duration: 0.5 }}
+                                            transition={{ repeat: Infinity, duration: 0.8 }}
                                         >
                                             {displayText}
                                         </motion.span>
@@ -300,47 +297,20 @@ export default function IntelligentRedactionPage() {
                             </div>
                         </div>
 
-                        {/* Redaction Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {selectedTypes.map((type) => {
-                                const option = redactionOptions.find(o => o.id === type);
-                                if (!option) return null;
-                                return (
-                                    <div
-                                        key={type}
-                                        className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 text-center"
-                                    >
-                                        <div className="text-2xl mb-1">{option.icon}</div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">{option.label}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-4">
-                            <motion.button
-                                onClick={handleCopy}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
-                            >
-                                {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                                {copied ? 'Copied!' : 'Copy Redacted Text'}
-                            </motion.button>
-                            <motion.button
-                                onClick={handleReset}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="py-3 px-6 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 flex items-center justify-center gap-2"
-                            >
-                                <RotateCcw className="w-5 h-5" />
-                                New Document
-                            </motion.button>
+                            {redactionOptions.map((opt) => (
+                                <div key={opt.id} className={clsx(
+                                    "p-4 rounded-2xl border transition-all text-center",
+                                    selectedTypes.includes(opt.id) ? "bg-white/5 border-white/10" : "opacity-30 border-transparent grayscale"
+                                )}>
+                                    <div className="text-xl mb-1">{opt.icon}</div>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">{opt.label}</p>
+                                </div>
+                            ))}
                         </div>
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </div>
         </div>
     );
 }
