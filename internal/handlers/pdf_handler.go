@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
+	"brainy-pdf/internal/config"
 	"brainy-pdf/internal/middleware"
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
@@ -16,14 +20,45 @@ import (
 type PDFHandler struct {
 	pdfService     *services.PDFService
 	storageService *services.StorageService
+	userService    *services.UserService
 }
 
 // NewPDFHandler creates a new PDF handler
-func NewPDFHandler(pdfService *services.PDFService, storageService *services.StorageService) *PDFHandler {
+func NewPDFHandler(pdfService *services.PDFService, storageService *services.StorageService, userService *services.UserService) *PDFHandler {
 	return &PDFHandler{
 		pdfService:     pdfService,
 		storageService: storageService,
+		userService:    userService,
 	}
+}
+
+func (h *PDFHandler) checkFileSize(c *gin.Context, size int64) bool {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		utils.Unauthorized(c, "Unauthorized")
+		return false
+	}
+
+	user, err := h.userService.GetUserByFirebaseUID(context.Background(), userID)
+	if err != nil {
+		utils.InternalServerError(c, "Failed to fetch user limits")
+		return false
+	}
+
+	limits, ok := config.Plans[user.Plan]
+	if !ok {
+		limits = config.Plans["free"]
+	}
+
+	if size > limits.MaxFileSize {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":   "File too large",
+			"message": fmt.Sprintf("Your current plan (%s) allows files up to %d MB. Please upgrade to process larger files.", user.Plan, limits.MaxFileSize/(1024*1024)),
+			"code":    "PLAN_LIMIT_EXCEEDED",
+		})
+		return false
+	}
+	return true
 }
 
 // Merge handles POST /api/v1/pdf/merge
@@ -38,6 +73,16 @@ func (h *PDFHandler) Merge(c *gin.Context) {
 	files := form.File["files"]
 	if len(files) < 2 {
 		utils.BadRequest(c, "At least 2 PDF files required")
+		return
+	}
+
+	// Calculate total size
+	var totalSize int64
+	for _, file := range files {
+		totalSize += file.Size
+	}
+
+	if !h.checkFileSize(c, totalSize) {
 		return
 	}
 
@@ -105,6 +150,10 @@ func (h *PDFHandler) Split(c *gin.Context) {
 	}
 	defer file.Close()
 
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
+
 	pages := c.PostForm("pages")
 	if pages == "" {
 		utils.BadRequest(c, "Pages parameter required (e.g., '1-3,5,7-9')")
@@ -157,14 +206,19 @@ func (h *PDFHandler) Split(c *gin.Context) {
 	})
 }
 
+
 // Rotate handles POST /api/v1/pdf/rotate
 func (h *PDFHandler) Rotate(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	pages := c.PostForm("pages")
 	if pages == "" {
@@ -213,12 +267,16 @@ func (h *PDFHandler) Rotate(c *gin.Context) {
 
 // Compress handles POST /api/v1/pdf/compress
 func (h *PDFHandler) Compress(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	quality := c.DefaultPostForm("quality", "medium")
 
@@ -270,12 +328,16 @@ func (h *PDFHandler) Compress(c *gin.Context) {
 
 // ExtractPages handles POST /api/v1/pdf/extract-pages
 func (h *PDFHandler) ExtractPages(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	pages := c.PostForm("pages")
 	if pages == "" {
@@ -318,12 +380,16 @@ func (h *PDFHandler) ExtractPages(c *gin.Context) {
 
 // RemovePages handles POST /api/v1/pdf/remove-pages
 func (h *PDFHandler) RemovePages(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	pages := c.PostForm("pages")
 	if pages == "" {
@@ -356,22 +422,31 @@ func (h *PDFHandler) RemovePages(c *gin.Context) {
 		return
 	}
 
+	newPageCount, _ := h.pdfService.GetPageCount(result)
+	originalPageCount, _ := h.pdfService.GetPageCount(data)
+
 	utils.Success(c, gin.H{
-		"fileId":   uploadResult.FileID,
-		"url":      uploadResult.URL,
-		"filename": uploadResult.Filename,
-		"size":     uploadResult.Size,
+		"fileId":        uploadResult.FileID,
+		"url":           uploadResult.URL,
+		"filename":      uploadResult.Filename,
+		"size":          uploadResult.Size,
+		"pageCount":     newPageCount,
+		"originalPages": originalPageCount,
 	})
 }
 
 // Organize handles POST /api/v1/pdf/organize
 func (h *PDFHandler) Organize(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	orderStr := c.PostForm("order")
 	if orderStr == "" {
@@ -416,22 +491,31 @@ func (h *PDFHandler) Organize(c *gin.Context) {
 		return
 	}
 
+	newPageCount, _ := h.pdfService.GetPageCount(result)
+	originalPageCount, _ := h.pdfService.GetPageCount(data)
+
 	utils.Success(c, gin.H{
-		"fileId":   uploadResult.FileID,
-		"url":      uploadResult.URL,
-		"filename": uploadResult.Filename,
-		"size":     uploadResult.Size,
+		"fileId":        uploadResult.FileID,
+		"url":           uploadResult.URL,
+		"filename":      uploadResult.Filename,
+		"size":          uploadResult.Size,
+		"pageCount":     newPageCount,
+		"originalPages": originalPageCount,
 	})
 }
 
 // Watermark handles POST /api/v1/pdf/watermark
 func (h *PDFHandler) Watermark(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	text := c.PostForm("text")
 	if text == "" {
@@ -482,12 +566,16 @@ func (h *PDFHandler) Watermark(c *gin.Context) {
 
 // PageNumbers handles POST /api/v1/pdf/page-numbers
 func (h *PDFHandler) PageNumbers(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	position := c.DefaultPostForm("position", "bottom-center")
 	format := c.DefaultPostForm("format", "{n}")
@@ -533,12 +621,16 @@ func (h *PDFHandler) PageNumbers(c *gin.Context) {
 
 // Crop handles POST /api/v1/pdf/crop
 func (h *PDFHandler) Crop(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	top, _ := strconv.ParseFloat(c.DefaultPostForm("top", "0"), 64)
 	right, _ := strconv.ParseFloat(c.DefaultPostForm("right", "0"), 64)
@@ -585,12 +677,16 @@ func (h *PDFHandler) Crop(c *gin.Context) {
 
 // GetInfo handles GET /api/v1/pdf/info
 func (h *PDFHandler) GetInfo(c *gin.Context) {
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		utils.BadRequest(c, "No file provided")
 		return
 	}
 	defer file.Close()
+
+	if !h.checkFileSize(c, header.Size) {
+		return
+	}
 
 	data, err := io.ReadAll(file)
 	if err != nil {
@@ -598,22 +694,36 @@ func (h *PDFHandler) GetInfo(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[PDF] GetInfo for file: %s, size: %d", header.Filename, header.Size)
 	info, err := h.pdfService.GetInfo(data)
 	if err != nil {
+		log.Printf("[PDF] Error getting info: %v", err)
 		utils.InternalServerError(c, "Failed to get PDF info: "+err.Error())
 		return
 	}
 
-	pageCount, _ := h.pdfService.GetPageCount(data)
-	info["pageCount"] = strconv.Itoa(pageCount)
-	info["size"] = strconv.FormatInt(int64(len(data)), 10)
-
-	utils.Success(c, info)
+	pageCount, err := h.pdfService.GetPageCount(data)
+	if err != nil {
+		log.Printf("[PDF] Error getting page count: %v", err)
+		utils.InternalServerError(c, "Failed to parse PDF pages: "+err.Error())
+		return
+	}
+	log.Printf("[PDF] Detected %d pages", pageCount)
+	
+	utils.Success(c, gin.H{
+		"pageCount": pageCount,
+		"size":      len(data),
+		"title":     info["title"],
+		"author":    info["author"],
+		"subject":   info["subject"],
+		"version":   info["version"],
+	})
 }
 
 // RegisterRoutes registers all PDF routes
-func (h *PDFHandler) RegisterRoutes(r *gin.RouterGroup) {
+func (h *PDFHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	pdf := r.Group("/pdf")
+	pdf.Use(authMiddleware)
 	{
 		pdf.POST("/merge", h.Merge)
 		pdf.POST("/split", h.Split)

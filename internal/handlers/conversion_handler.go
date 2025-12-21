@@ -295,8 +295,9 @@ func (h *ConversionHandler) Formats(c *gin.Context) {
 }
 
 // RegisterRoutes registers conversion routes
-func (h *ConversionHandler) RegisterRoutes(r *gin.RouterGroup) {
+func (h *ConversionHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	convert := r.Group("/convert")
+	convert.Use(authMiddleware)
 	{
 		convert.POST("", h.Convert)
 		convert.GET("/status/:jobId", h.Status)

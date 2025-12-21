@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"brainy-pdf/internal/config"
 	"brainy-pdf/internal/models"
 	"brainy-pdf/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -31,13 +32,16 @@ func (s *UserService) CreateOrUpdateUser(ctx context.Context, firebaseUID, email
 	err := collection.FindOne(ctx, filter).Decode(&existingUser)
 
 	if err == nil {
-		// User exists, update
+		// User exists, update and sync storage limit from config
+		correctStorageLimit := config.GetStorageLimitForPlan(existingUser.Plan)
+		
 		update := bson.M{
 			"$set": bson.M{
-				"email":       email,
-				"displayName": displayName,
-				"photoURL":    photoURL,
-				"updatedAt":   time.Now(),
+				"email":        email,
+				"displayName":  displayName,
+				"photoURL":     photoURL,
+				"storageLimit": correctStorageLimit, // Sync storage limit from config
+				"updatedAt":    time.Now(),
 			},
 		}
 		_, err = collection.UpdateOne(ctx, filter, update)
@@ -48,10 +52,11 @@ func (s *UserService) CreateOrUpdateUser(ctx context.Context, firebaseUID, email
 		existingUser.Email = email
 		existingUser.DisplayName = displayName
 		existingUser.PhotoURL = photoURL
+		existingUser.StorageLimit = correctStorageLimit
 		return &existingUser, nil
 	}
 
-	// Create new user
+	// Create new user with FREE plan defaults
 	user := models.User{
 		ID:           primitive.NewObjectID(),
 		FirebaseUID:  firebaseUID,
@@ -60,7 +65,7 @@ func (s *UserService) CreateOrUpdateUser(ctx context.Context, firebaseUID, email
 		PhotoURL:     photoURL,
 		Plan:         "free",
 		StorageUsed:  0,
-		StorageLimit: 100 * 1024 * 1024, // 100MB for free plan
+		StorageLimit: config.GetStorageLimitForPlan("free"), // 10MB for free plan
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -73,7 +78,7 @@ func (s *UserService) CreateOrUpdateUser(ctx context.Context, firebaseUID, email
 	return &user, nil
 }
 
-// GetUserByFirebaseUID retrieves a user by Firebase UID
+// GetUserByFirebaseUID retrieves a user by Firebase UID and ensures limits are synced
 func (s *UserService) GetUserByFirebaseUID(ctx context.Context, firebaseUID string) (*models.User, error) {
 	collection := s.mongoClient.Users()
 
@@ -81,6 +86,16 @@ func (s *UserService) GetUserByFirebaseUID(ctx context.Context, firebaseUID stri
 	err := collection.FindOne(ctx, bson.M{"firebaseUid": firebaseUID}).Decode(&user)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	// Sync storage limit if it doesn't match the current config for their plan
+	correctLimit := config.GetStorageLimitForPlan(user.Plan)
+	if user.StorageLimit != correctLimit {
+		user.StorageLimit = correctLimit
+		// Blocking update to ensure DB is fixed
+		collection.UpdateOne(ctx, bson.M{"firebaseUid": firebaseUID}, bson.M{
+			"$set": bson.M{"storageLimit": correctLimit, "updatedAt": time.Now()},
+		})
 	}
 
 	return &user, nil
@@ -138,16 +153,11 @@ func (s *UserService) UpdatePlan(ctx context.Context, userID, plan string) error
 		return fmt.Errorf("invalid user ID: %w", err)
 	}
 
-	// Set storage limit based on plan
-	var storageLimit int64
-	switch plan {
-	case "pro":
-		storageLimit = 5 * 1024 * 1024 * 1024 // 5GB
-	case "enterprise":
-		storageLimit = 50 * 1024 * 1024 * 1024 // 50GB
-	default:
-		storageLimit = 100 * 1024 * 1024 // 100MB
+	// Set storage limit based on plan from config
+	storageLimit := config.GetStorageLimitForPlan(plan)
+	if _, ok := config.Plans[plan]; !ok {
 		plan = "free"
+		storageLimit = config.GetStorageLimitForPlan("free")
 	}
 
 	collection := s.mongoClient.Users()
@@ -211,4 +221,49 @@ func (s *UserService) RecalculateUserStorage(ctx context.Context, firebaseUID st
 	}
 
 	return nil
+}
+
+// CheckLimit checks if a user has reached their plan limits for a specific feature
+func (s *UserService) CheckLimit(ctx context.Context, firebaseUID string, feature string) (bool, error) {
+	user, err := s.GetUserByFirebaseUID(ctx, firebaseUID)
+	if err != nil {
+		return false, err
+	}
+
+	// In real-world, we'd check if LastReset was > 30 days ago and reset counts here.
+
+	limits, ok := config.Plans[user.Plan]
+	if !ok {
+		limits = config.Plans["free"]
+	}
+
+	switch feature {
+	case "ai_chat":
+		return user.AIChatCount < limits.AIChatsLimit, nil
+	case "toolkit":
+		return user.ToolkitCount < limits.ToolkitOpsLimit, nil
+	case "sharing":
+		// Count active links from shares collection
+		count, _ := s.mongoClient.Collection("shares").CountDocuments(ctx, bson.M{"creatorId": firebaseUID, "expiresAt": bson.M{"$gt": time.Now()}})
+		return int(count) < limits.MaxActiveLinks, nil
+	}
+
+	return true, nil
+}
+
+// IncrementCounter increments a feature counter for a user
+func (s *UserService) IncrementCounter(ctx context.Context, firebaseUID string, feature string) error {
+	collection := s.mongoClient.Users()
+	var field string
+	switch feature {
+	case "ai_chat":
+		field = "aiChatCount"
+	case "toolkit":
+		field = "toolkitCount"
+	default:
+		return nil
+	}
+
+	_, err := collection.UpdateOne(ctx, bson.M{"firebaseUid": firebaseUID}, bson.M{"$inc": bson.M{field: 1}})
+	return err
 }

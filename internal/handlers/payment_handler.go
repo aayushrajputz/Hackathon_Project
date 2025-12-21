@@ -64,10 +64,14 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 
 	var amount int64 // Amount in paise
 	switch req.Plan {
+	case "student":
+		amount = 9900 // ₹99
 	case "pro":
-		amount = 49900 // ₹499
-	case "enterprise":
-		amount = 299900 // ₹2999
+		amount = 29900 // ₹299
+	case "plus":
+		amount = 69900 // ₹699
+	case "business":
+		amount = 199900 // ₹1999
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid plan"})
 		return

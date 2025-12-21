@@ -57,12 +57,32 @@ const aiTools = [
     { name: 'Smart Search', href: '/ai/search', icon: Search },
 ];
 
+// Helper function to format storage size in appropriate units
+function formatStorageSize(bytes: number): string {
+    if (bytes === 0) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1024) {
+        return `${(mb / 1024).toFixed(1)} GB`;
+    }
+    return `${Math.round(mb)} MB`;
+}
+
 export default function Sidebar() {
     const pathname = usePathname();
     const { user, signOut } = useAuthStore();
     const { sidebarOpen, toggleSidebar } = useAppStore();
     const [pdfExpanded, setPdfExpanded] = useState(true);
     const [aiExpanded, setAiExpanded] = useState(true);
+
+    // Calculate effective storage limits for display (safety net)
+    const effectiveLimit = user ? (
+        (user.plan === 'free' || !user.plan)
+            ? (Math.min(user.storageLimit || 0, 10 * 1024 * 1024) || 10 * 1024 * 1024)
+            : (user.storageLimit || 100 * 1024 * 1024)
+    ) : 10 * 1024 * 1024;
+
+    const usageRatio = user ? (user.storageUsed || 0) / effectiveLimit : 0;
+    const usagePercent = Math.min(100, usageRatio * 100);
 
     return (
         <>
@@ -218,31 +238,33 @@ export default function Sidebar() {
                                 {/* Storage Usage */}
                                 <div className="px-1">
                                     <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                        <span>Storage</span>
-                                        <span>{Math.round((user.storageUsed || 0) / (1024 * 1024))} / {Math.round((user.storageLimit || 100 * 1024 * 1024) / (1024 * 1024))} MB</span>
+                                        <span>Storage ({user.plan?.toUpperCase() || 'FREE'})</span>
+                                        <span>
+                                            {formatStorageSize(user.storageUsed || 0)} / {formatStorageSize(effectiveLimit)}
+                                        </span>
                                     </div>
                                     <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                                         <div
                                             className={clsx(
                                                 "h-full rounded-full transition-all duration-500",
-                                                (user.storageUsed || 0) / (user.storageLimit || 100 * 1024 * 1024) > 0.9 ? "bg-red-500" :
-                                                    (user.storageUsed || 0) / (user.storageLimit || 100 * 1024 * 1024) > 0.7 ? "bg-yellow-500" :
+                                                usageRatio > 0.9 ? "bg-red-500" :
+                                                    usageRatio > 0.7 ? "bg-yellow-500" :
                                                         "bg-green-500"
                                             )}
-                                            style={{ width: `${Math.min(100, ((user.storageUsed || 0) / (user.storageLimit || 100 * 1024 * 1024) * 100))}%` }}
+                                            style={{ width: `${usagePercent}%` }}
                                         />
                                     </div>
-                                    {(user.storageUsed || 0) / (user.storageLimit || 100 * 1024 * 1024) > 0.9 && (
+                                    {usageRatio > 0.9 && (
                                         <div className="mt-1 text-xs text-red-500 font-medium">
-                                            Storage almost full
+                                            Storage almost full - Upgrade now!
                                         </div>
                                     )}
                                 </div>
                                 <Link
-                                    href="/pricing"
+                                    href="/plans"
                                     className={clsx(
                                         'sidebar-link',
-                                        pathname === '/pricing' && 'sidebar-link-active'
+                                        pathname === '/plans' && 'sidebar-link-active'
                                     )}
                                 >
                                     <CreditCard className="w-5 h-5" />

@@ -284,4 +284,13 @@ export const paymentApi = {
     verifyPayment: (data: any) => api.post<ApiResponse<any>>('/payment/verify', data),
 };
 
+export const adminApi = {
+    getStats: () => api.get<ApiResponse<any>>('/admin/stats'),
+    getAnalytics: () => api.get<ApiResponse<any>>('/admin/analytics'),
+    listUsers: () => api.get<ApiResponse<any>>('/admin/users'),
+    listDocuments: () => api.get<ApiResponse<any>>('/admin/documents'),
+    updateUserRole: (uid: string, role: string) => api.post<ApiResponse<any>>(`/admin/users/${uid}/role`, { role }),
+    updateUserPlan: (uid: string, plan: string) => api.post<ApiResponse<any>>(`/admin/users/${uid}/plan`, { plan }),
+};
+
 export default api;

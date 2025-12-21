@@ -80,6 +80,24 @@ func (h *ShareHandler) CreateShare(c *gin.Context) {
 	code := generateCode()
 	expiresAt := time.Now().Add(time.Duration(req.ExpiresInMinutes) * time.Minute)
 
+	// Fetch user to check plan
+	var user models.User
+	err := h.db.Collection("users").FindOne(context.Background(), bson.M{"firebaseUid": userId}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Restrict sharing to Paid users only (block "free")
+	if user.Plan == "" || user.Plan == "free" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":   "Access Denied",
+			"message": "Public sharing is a Pro feature (Plus 4+ models). Upgrade your plan to unlock!",
+			"code":    "PRO_FEATURE_REQUIRED",
+		})
+		return
+	}
+
 	// Fetch filename if not provided
 	filename := req.Filename
 	if filename == "" {
@@ -115,7 +133,7 @@ func (h *ShareHandler) CreateShare(c *gin.Context) {
 		},
 	}
 
-	_, err := h.db.Collection("shares").InsertOne(context.Background(), share)
+	_, err = h.db.Collection("shares").InsertOne(context.Background(), share)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create share link"})
 		return

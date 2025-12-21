@@ -118,7 +118,7 @@ export default function OrganizePDFPage() {
                 const newOrder = pages.map(p => p.pageNumber).join(',');
                 formData.append('order', newOrder);
 
-                const response = await api.post('/pdf/reorder', formData, {
+                const response = await api.post('/pdf/organize', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 setResult(response.data.data);
@@ -140,7 +140,7 @@ export default function OrganizePDFPage() {
                 const pagesToRemove = selectedPages.map(p => p.pageNumber).join(',');
                 formData.append('pages', pagesToRemove);
 
-                const response = await api.post('/pdf/remove', formData, {
+                const response = await api.post('/pdf/remove-pages', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 setResult(response.data.data);

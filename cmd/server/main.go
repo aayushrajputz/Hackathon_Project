@@ -76,17 +76,18 @@ func main() {
 	// Handlers
 	authHandler := handlers.NewAuthHandler(userService, firebaseClient) // Assuming firebaseClient is authClient
 	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
-	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, mongoClient) // Original corePDFHandler
+	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, userService, mongoClient) // Original corePDFHandler
 	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService) // Original aiHandler
 	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService)
 	conversionHandler := handlers.NewConversionHandler(conversionService) // Original conversionHandler
 	paymentHandler := handlers.NewPaymentHandler(cfg, userService, notificationService)
 	
 	// Original handlers that were not explicitly in the provided snippet but are needed
-	pdfHandler := handlers.NewPDFHandler(pdfService, storageService)
+	pdfHandler := handlers.NewPDFHandler(pdfService, storageService, userService)
 	storageHandler := handlers.NewStorageHandler(storageService)
 	libraryHandler := handlers.NewLibraryHandler(minioClient, mongoClient, pdfService, userService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService, userService)
+	adminHandler := handlers.NewAdminHandler(mongoClient, userService)
 
 
 	// Create Gin router
@@ -101,7 +102,7 @@ func main() {
 			"status":    "healthy",
 			"timestamp": time.Now().UTC(),
 			"version":   "2.0.0",
-			"features":  []string{"merge", "split", "organize", "ai-features", "ocr", "library", "convert"},
+			"features":  []string{"merge", "split", "organize", "ai-features", "ocr", "library", "convert", "admin"},
 		})
 	})
 
@@ -112,10 +113,14 @@ func main() {
 	var optionalAuthMiddleware gin.HandlerFunc = func(c *gin.Context) {
 		c.Next()
 	}
+	var adminMiddleware gin.HandlerFunc = func(c *gin.Context) {
+		c.Next()
+	}
 
 	if firebaseClient != nil {
 		authMiddleware = middleware.AuthMiddleware(firebaseClient)
 		optionalAuthMiddleware = middleware.OptionalAuthMiddleware(firebaseClient)
+		adminMiddleware = middleware.AdminMiddleware(userService)
 	}
 
 	// API v1 routes
@@ -123,15 +128,16 @@ func main() {
 	{
 		// Register routes
 		authHandler.RegisterRoutes(v1, authMiddleware)
-		pdfHandler.RegisterRoutes(v1)
-		aiHandler.RegisterRoutes(v1)
+		pdfHandler.RegisterRoutes(v1, authMiddleware)
+		aiHandler.RegisterRoutes(v1, authMiddleware)
 		storageHandler.RegisterRoutes(v1, authMiddleware, optionalAuthMiddleware)
 		libraryHandler.RegisterRoutes(v1, authMiddleware)
 		log.Println("📤 Registering Share routes...")
 		shareHandler.RegisterRoutes(v1, authMiddleware)
-		conversionHandler.RegisterRoutes(v1)
+		conversionHandler.RegisterRoutes(v1, optionalAuthMiddleware)
 		notificationHandler.RegisterRoutes(v1, authMiddleware) // Register notification routes with auth
 		paymentHandler.RegisterRoutes(v1, authMiddleware)
+		adminHandler.RegisterRoutes(v1, authMiddleware, adminMiddleware)
 	}
 
 	// API routes (Phase 3 - /api/pdf/*)

@@ -7,6 +7,7 @@ interface UserData {
     email: string;
     displayName: string;
     photoURL: string;
+    role: string;
     plan: string;
     storageUsed: number;
     storageLimit: number;
@@ -86,6 +87,9 @@ export const useAuthStore = create<AuthState>()(
                         user: null,
                         isAuthenticated: false,
                     });
+
+                    // Clear notifications on logout to prevent leakage
+                    useNotificationStore.getState().clearAll();
                 } catch (error) {
                     console.error('Sign out error:', error);
                     throw error;
@@ -260,19 +264,9 @@ export const useNotificationStore = create<NotificationState>()(
                             createdAt: new Date(bn.createdAt).getTime()
                         }));
 
-                        // Filter out duplicates based on ID
-                        const existingIds = new Set(state.notifications.map(n => n.id));
-                        const uniqueIncoming = incoming.filter((n: Notification) => !existingIds.has(n.id));
-
-                        if (uniqueIncoming.length === 0) return state;
-
-                        const merged = [...uniqueIncoming, ...state.notifications]
-                            .sort((a, b) => b.createdAt - a.createdAt)
-                            .slice(0, 50);
-
                         return {
-                            notifications: merged,
-                            unreadCount: merged.filter(n => !n.read).length
+                            notifications: incoming,
+                            unreadCount: incoming.filter((n: Notification) => !n.read).length
                         };
                     });
                 } catch (err) {

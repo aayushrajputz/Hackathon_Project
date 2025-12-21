@@ -28,6 +28,7 @@ import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
 import { downloadFile } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import ShareModal from '@/components/ui/ShareModal';
 import PDFPreview from '@/components/ui/PDFPreview';
@@ -58,6 +59,8 @@ export default function LibraryPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [hasFetched, setHasFetched] = useState(false);
+    const { user: userFromStore } = useAuthStore();
+
 
     // New Features State
     const [shareFile, setShareFile] = useState<LibraryFile | null>(null);
@@ -141,10 +144,29 @@ export default function LibraryPage() {
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return;
 
+        // Plan-based size check
+        const userPlan = userFromStore?.plan || 'free';
+        const limits = {
+            student: 25 * 1024 * 1024,
+            pro: 100 * 1024 * 1024,
+            plus: 300 * 1024 * 1024,
+            business: 1024 * 1024 * 1024,
+            free: 10 * 1024 * 1024
+        } as any;
+        const maxFileSize = limits[userPlan] || limits.free;
+
         setIsUploading(true);
         let successCount = 0;
 
         for (const file of acceptedFiles) {
+            if (file.size > maxFileSize) {
+                toast.error(`${file.name} is too large. Your plan limit is ${maxFileSize / (1024 * 1024)}MB.`, {
+                    duration: 5000,
+                    icon: '⚠️'
+                });
+                continue;
+            }
+
             try {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -155,18 +177,17 @@ export default function LibraryPage() {
                 successCount++;
                 notify.uploadSuccess(file.name);
             } catch (error: any) {
-                notify.uploadError(file.name); // Simplified error for loop
+                notify.uploadError(file.name);
             }
         }
 
         if (successCount > 0) {
             fetchLibrary();
-            // Sync storage after upload
             import('@/lib/store').then(({ useAuthStore }) => useAuthStore.getState().syncStorage());
         }
         setIsUploading(false);
         setShowUploadModal(false);
-    }, [fetchLibrary]);
+    }, [fetchLibrary, userFromStore]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -400,7 +421,17 @@ export default function LibraryPage() {
                                             <Download className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => setShareFile(file)}
+                                            onClick={() => {
+                                                if (userFromStore?.plan === 'pro' || userFromStore?.plan === 'enterprise') {
+                                                    setShareFile(file);
+                                                } else {
+                                                    toast.error('Public sharing is a Pro feature 🚀', {
+                                                        description: 'Upgrade your plan to share PDFs with anyone!',
+                                                        duration: 4000,
+                                                    } as any);
+                                                    router.push('/pricing');
+                                                }
+                                            }}
                                             className="p-1.5 bg-white dark:bg-slate-800 rounded-lg shadow hover:bg-blue-50 text-blue-500"
                                             title="Share"
                                         >

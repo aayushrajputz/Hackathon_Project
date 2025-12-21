@@ -97,6 +97,24 @@ const tools = [
         bgColor: 'bg-amber-100 dark:bg-amber-900/30',
         textColor: 'text-amber-600',
     },
+    {
+        name: 'Draw Text',
+        description: 'Add custom text at any position on your PDF',
+        icon: Layers,
+        href: '/tools/draw-text',
+        color: 'from-indigo-500 to-purple-600',
+        bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
+        textColor: 'text-indigo-600',
+    },
+    {
+        name: 'Add Badge',
+        description: 'Add trophies, medals, or verification badges',
+        icon: Layers,
+        href: '/tools/add-badge',
+        color: 'from-yellow-400 to-orange-500',
+        bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
+        textColor: 'text-yellow-600',
+    },
 ];
 
 export default function ToolsIndexPage() {

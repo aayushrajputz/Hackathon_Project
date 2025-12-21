@@ -1,9 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { FileText, ArrowLeft } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Lock } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
+import { useEffect } from 'react';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
 
 export default function ToolsLayout({
     children,
@@ -11,63 +14,64 @@ export default function ToolsLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    const { isAuthenticated } = useAuthStore();
+    const router = useRouter();
+    const { isAuthenticated, isLoading, initAuth } = useAuthStore();
 
-    return (
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-            {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-slate-700">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/"
-                                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
-                            >
-                                <ArrowLeft className="w-5 h-5" />
-                                <span className="hidden sm:inline">Back</span>
-                            </Link>
-                            <div className="h-6 w-px bg-gray-200 dark:bg-slate-700" />
-                            <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-                                    <FileText className="w-5 h-5 text-white" />
-                                </div>
-                                <span className="font-bold text-lg hidden sm:inline gradient-text">BrainyPDF</span>
-                            </Link>
-                        </div>
+    // Initialize auth on mount
+    useEffect(() => {
+        initAuth();
+    }, [initAuth]);
 
-                        <nav className="flex items-center gap-2">
-                            {isAuthenticated ? (
-                                <Link
-                                    href="/dashboard"
-                                    className="ml-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                                >
-                                    Dashboard
-                                </Link>
-                            ) : (
-                                <Link
-                                    href="/login"
-                                    className="ml-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                                >
-                                    Sign In
-                                </Link>
-                            )}
-                        </nav>
-                    </div>
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/login');
+        }
+    }, [isAuthenticated, isLoading, router]);
+
+    // Show loading while checking auth
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-400">Loading...</p>
                 </div>
-            </header>
+            </div>
+        );
+    }
 
-            {/* Main Content */}
-            <main className="container mx-auto px-4 py-8">
+    // Show access denied if not authenticated
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+                <div className="text-center">
+                    <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                        <Lock className="w-10 h-10 text-red-500" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-white mb-3">Login Required</h1>
+                    <p className="text-gray-400 mb-8 max-w-md">
+                        Please sign in to access our premium PDF tools and AI features.
+                    </p>
+                    <Link
+                        href="/login"
+                        className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-semibold rounded-xl hover:from-cyan-400 hover:to-purple-500 transition-all shadow-lg shadow-purple-500/25"
+                    >
+                        Sign In to Continue
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Authenticated - show full dashboard layout with sidebar
+    return (
+        <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900">
+            <Sidebar />
+            <main className="flex-1 md:ml-72 p-6 md:p-8 overflow-x-hidden">
+                <Header />
                 {children}
             </main>
-
-            {/* Footer */}
-            <footer className="border-t border-gray-200 dark:border-slate-700 py-6">
-                <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-                    © 2025 BrainyPDF. All tools are free to use.
-                </div>
-            </footer>
         </div>
     );
 }

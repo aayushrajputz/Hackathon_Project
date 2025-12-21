@@ -13,10 +13,14 @@ type User struct {
 	Email       string             `bson:"email" json:"email"`
 	DisplayName string             `bson:"displayName" json:"displayName"`
 	PhotoURL    string             `bson:"photoURL" json:"photoURL"`
-	Plan        string             `bson:"plan" json:"plan"` // free, pro, enterprise
-	StorageUsed int64              `bson:"storageUsed" json:"storageUsed"`
+	Role        string             `bson:"role" json:"role"` // user, admin
+	Plan         string             `bson:"plan" json:"plan"` // free, student, pro, plus, business
+	StorageUsed  int64              `bson:"storageUsed" json:"storageUsed"`
 	StorageLimit int64             `bson:"storageLimit" json:"storageLimit"`
-	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	AIChatCount  int               `bson:"aiChatCount" json:"aiChatCount"`
+	ToolkitCount int               `bson:"toolkitCount" json:"toolkitCount"`
+	LastReset    time.Time          `bson:"lastReset" json:"lastReset"`
+	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 

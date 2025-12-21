@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { FileText, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -28,31 +29,46 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950 relative overflow-hidden">
+            {/* Premium Background */}
+            <div className="fixed inset-0 z-0">
+                <Image
+                    src="/images/hero-bg.png"
+                    alt="Background"
+                    fill
+                    className="object-cover opacity-50"
+                    priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/50 to-slate-950"></div>
+                {/* Animated Orbs */}
+                <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/3 right-1/4 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+            </div>
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
+                className="w-full max-w-md relative z-10"
             >
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2 mb-6">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
-                            <FileText className="w-7 h-7 text-white" />
+                    <Link href="/" className="inline-flex items-center gap-3 mb-6">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                            <FileText className="w-8 h-8 text-white" />
                         </div>
                     </Link>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Welcome to BrainyPDF
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                        Welcome Back
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2">
-                        Sign in to access your PDF library and save your work
+                    <p className="text-gray-400 mt-3 text-lg">
+                        Sign in to access all premium PDF tools
                     </p>
                 </div>
 
-                <div className="card p-8 space-y-6">
+                <div className="p-8 space-y-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
                     <button
                         onClick={handleGoogleSignIn}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white rounded-xl hover:bg-gray-100 transition-colors font-semibold text-gray-700 disabled:opacity-50 shadow-lg"
                     >
                         {isLoading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -79,38 +95,47 @@ export default function LoginPage() {
                         {isLoading ? 'Signing in...' : 'Continue with Google'}
                     </button>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200 dark:border-slate-700" />
+                    <div className="flex items-center gap-4">
+                        <div className="flex-1 h-px bg-white/10"></div>
+                        <span className="text-sm text-gray-500">Secure Login</span>
+                        <div className="flex-1 h-px bg-white/10"></div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            </div>
+                            Access all 11+ PDF tools
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white dark:bg-slate-900 text-gray-500">
-                                or continue without signing in
-                            </span>
+                        <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            </div>
+                            AI-powered features included
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            </div>
+                            Save & share your documents
                         </div>
                     </div>
 
-                    <Link
-                        href="/tools"
-                        className="block w-full text-center px-6 py-4 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium text-gray-700 dark:text-gray-200"
-                    >
-                        Use Tools Without Account
-                    </Link>
-
-                    <p className="text-center text-sm text-gray-500">
+                    <p className="text-center text-xs text-gray-500 pt-2">
                         By signing in, you agree to our{' '}
-                        <Link href="/terms" className="text-primary-600 hover:underline">
-                            Terms of Service
+                        <Link href="/terms" className="text-cyan-400 hover:underline">
+                            Terms
                         </Link>{' '}
                         and{' '}
-                        <Link href="/privacy" className="text-primary-600 hover:underline">
+                        <Link href="/privacy" className="text-cyan-400 hover:underline">
                             Privacy Policy
                         </Link>
                     </p>
                 </div>
 
-                <p className="text-center text-sm text-gray-500 mt-6">
-                    <Link href="/" className="text-primary-600 hover:underline">
+                <p className="text-center text-sm text-gray-500 mt-8">
+                    <Link href="/" className="text-cyan-400 hover:text-cyan-300 transition-colors">
                         ← Back to home
                     </Link>
                 </p>

@@ -367,8 +367,9 @@ func (h *AIHandler) Search(c *gin.Context) {
 }
 
 // RegisterRoutes registers all AI routes
-func (h *AIHandler) RegisterRoutes(r *gin.RouterGroup) {
+func (h *AIHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	ai := r.Group("/ai")
+	ai.Use(authMiddleware)
 	{
 		ai.POST("/ocr", h.OCR)
 		ai.POST("/summarize", h.Summarize)

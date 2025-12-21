@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"brainy-pdf/internal/config"
 	"brainy-pdf/internal/middleware"
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
@@ -19,6 +20,7 @@ import (
 type CorePDFHandler struct {
 	pdfService     *services.PDFService
 	storageService *services.StorageService
+	userService    *services.UserService
 	mongoClient    *mongodb.Client
 }
 
@@ -38,12 +40,25 @@ type OperationLog struct {
 }
 
 // NewCorePDFHandler creates a new core PDF handler
-func NewCorePDFHandler(pdfService *services.PDFService, storageService *services.StorageService, mongoClient *mongodb.Client) *CorePDFHandler {
+func NewCorePDFHandler(pdfService *services.PDFService, storageService *services.StorageService, userService *services.UserService, mongoClient *mongodb.Client) *CorePDFHandler {
 	return &CorePDFHandler{
 		pdfService:     pdfService,
 		storageService: storageService,
+		userService:    userService,
 		mongoClient:    mongoClient,
 	}
+}
+
+// getMaxFileSize returns the max allowed file size for the user based on their plan
+func (h *CorePDFHandler) getMaxFileSize(c *gin.Context, userID string) int64 {
+	if userID == "" {
+		return config.GetMaxFileSizeForPlan("free")
+	}
+	user, err := h.userService.GetUserByFirebaseUID(c.Request.Context(), userID)
+	if err != nil {
+		return config.GetMaxFileSizeForPlan("free")
+	}
+	return config.GetMaxFileSizeForPlan(user.Plan)
 }
 
 // MergePDF handles POST /api/pdf/merge
@@ -174,10 +189,11 @@ func (h *CorePDFHandler) SplitPDF(c *gin.Context) {
 		return
 	}
 
-	// Validate file size (max 100MB)
-	if header.Size > 100*1024*1024 {
+	// Validate file size based on plan
+	maxSize := h.getMaxFileSize(c, userID)
+	if header.Size > maxSize {
 		h.logOperation(userID, "split", []string{header.Filename}, "", "error", "File too large", 0, startTime)
-		utils.BadRequest(c, "File exceeds 100MB limit")
+		utils.BadRequest(c, fmt.Sprintf("File size exceeds your plan limit of %d MB", maxSize/(1024*1024)))
 		return
 	}
 
@@ -1118,13 +1134,10 @@ func (h *CorePDFHandler) GetPDFInfo(c *gin.Context) {
 	info, _ := h.pdfService.GetInfo(data)
 
 	utils.Success(c, gin.H{
-		"success": true,
-		"data": gin.H{
-			"filename":  header.Filename,
-			"pageCount": pageCount,
-			"size":      len(data),
-			"version":   info["version"],
-		},
+		"filename":  header.Filename,
+		"pageCount": pageCount,
+		"size":      len(data),
+		"version":   info["version"],
 	})
 }
 
@@ -1230,6 +1243,119 @@ func (h *CorePDFHandler) ExtractPages(c *gin.Context) {
 	})
 }
 
+// DrawTextPDF handles POST /api/pdf/draw-text
+// Adds custom text at specific coordinates
+func (h *CorePDFHandler) DrawTextPDF(c *gin.Context) {
+	startTime := time.Now()
+	userID, _ := middleware.GetUserID(c)
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		h.logOperation(userID, "draw-text", nil, "", "error", "No file provided", 0, startTime)
+		utils.BadRequest(c, "No PDF file provided")
+		return
+	}
+	defer file.Close()
+
+	// Get parameters
+	text := c.PostForm("text")
+	if text == "" {
+		utils.BadRequest(c, "Text is required")
+		return
+	}
+
+	var x, y, fontSize float64
+	fmt.Sscanf(c.DefaultPostForm("x", "0"), "%f", &x)
+	fmt.Sscanf(c.DefaultPostForm("y", "0"), "%f", &y)
+	fmt.Sscanf(c.DefaultPostForm("fontSize", "24"), "%f", &fontSize)
+	color := c.DefaultPostForm("color", "#000000")
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		utils.BadRequest(c, "Failed to read file")
+		return
+	}
+
+	result, err := h.pdfService.DrawTextOnPDF(c.Request.Context(), data, services.DrawTextOptions{
+		Text:     text,
+		X:        x,
+		Y:        y,
+		FontSize: fontSize,
+		Color:    color,
+	})
+	if err != nil {
+		h.logOperation(userID, "draw-text", []string{header.Filename}, "", "error", err.Error(), 0, startTime)
+		utils.InternalServerError(c, "Failed to draw text: "+err.Error())
+		return
+	}
+
+	outputFilename := "custom_" + header.Filename
+	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, result, "application/pdf")
+	if err != nil {
+		utils.InternalServerError(c, "Failed to save file")
+		return
+	}
+
+	h.logOperation(userID, "draw-text", []string{header.Filename}, uploadResult.FileID, "success", "", 0, startTime)
+
+	utils.Success(c, gin.H{
+		"fileId": uploadResult.FileID,
+		"url":    uploadResult.URL,
+	})
+}
+
+// AddBadgePDF handles POST /api/pdf/add-badge
+func (h *CorePDFHandler) AddBadgePDF(c *gin.Context) {
+	startTime := time.Now()
+	userID, _ := middleware.GetUserID(c)
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		h.logOperation(userID, "add-badge", nil, "", "error", "No file provided", 0, startTime)
+		utils.BadRequest(c, "No PDF file provided")
+		return
+	}
+	defer file.Close()
+
+	badgeType := c.DefaultPostForm("type", "gold")
+	var x, y, scale float64
+	fmt.Sscanf(c.DefaultPostForm("x", "0"), "%f", &x)
+	fmt.Sscanf(c.DefaultPostForm("y", "0"), "%f", &y)
+	fmt.Sscanf(c.DefaultPostForm("scale", "1.0"), "%f", &scale)
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		utils.BadRequest(c, "Failed to read file")
+		return
+	}
+
+	result, err := h.pdfService.AddBadgeOnPDF(c.Request.Context(), data, services.BadgeOptions{
+		Type:  badgeType,
+		X:     x,
+		Y:     y,
+		Scale: scale,
+	})
+	if err != nil {
+		h.logOperation(userID, "add-badge", []string{header.Filename}, "", "error", err.Error(), 0, startTime)
+		utils.InternalServerError(c, "Failed to add badge: "+err.Error())
+		return
+	}
+
+	outputFilename := "badged_" + header.Filename
+	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, result, "application/pdf")
+	if err != nil {
+		utils.InternalServerError(c, "Failed to save file")
+		return
+	}
+
+	h.logOperation(userID, "add-badge", []string{header.Filename}, uploadResult.FileID, "success", "", 0, startTime)
+
+	utils.Success(c, gin.H{
+		"fileId": uploadResult.FileID,
+		"url":    uploadResult.URL,
+	})
+}
+
 // RegisterRoutes registers core PDF routes
 func (h *CorePDFHandler) RegisterRoutes(r *gin.RouterGroup) {
 	pdf := r.Group("/pdf")
@@ -1250,6 +1376,10 @@ func (h *CorePDFHandler) RegisterRoutes(r *gin.RouterGroup) {
 		pdf.POST("/info", h.GetPDFInfo)
 		// Phase 7: Extract pages
 		pdf.POST("/extract", h.ExtractPages)
+		
+		// Phase 8: Manual Tools (Premium)
+		pdf.POST("/draw-text", h.DrawTextPDF)
+		pdf.POST("/add-badge", h.AddBadgePDF)
 	}
 }
 
