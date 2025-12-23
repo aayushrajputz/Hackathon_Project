@@ -299,6 +299,12 @@ export const useNotificationStore = create<NotificationState>()(
             removeNotification: (id) =>
                 set((state) => {
                     const newNotifications = state.notifications.filter((n) => n.id !== id);
+
+                    // Delete from backend
+                    import('./api').then(({ api }) => {
+                        api.delete(`/notifications/${id}`).catch(() => { });
+                    });
+
                     return {
                         notifications: newNotifications,
                         unreadCount: newNotifications.filter((n) => !n.read).length,

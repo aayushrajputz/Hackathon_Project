@@ -78,6 +78,34 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 	utils.Success(c, gin.H{"status": "ok"})
 }
 
+// Delete deletes a notification
+func (h *NotificationHandler) Delete(c *gin.Context) {
+	firebaseUID, exists := middleware.GetUserID(c)
+	if !exists {
+		utils.Unauthorized(c, "Unauthorized")
+		return
+	}
+
+	user, err := h.userService.GetUserByFirebaseUID(c.Request.Context(), firebaseUID)
+	if err != nil {
+		utils.Unauthorized(c, "User not found")
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		utils.BadRequest(c, "Notification ID required")
+		return
+	}
+
+	if err := h.notificationService.DeleteNotification(c.Request.Context(), id, user.ID.Hex()); err != nil {
+		utils.InternalServerError(c, "Failed to delete notification")
+		return
+	}
+
+	utils.Success(c, gin.H{"status": "ok"})
+}
+
 // MarkAllRead marks all notifications as read
 func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
 	firebaseUID, exists := middleware.GetUserID(c)
@@ -106,6 +134,7 @@ func (h *NotificationHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware 
 	{
 		notifs.GET("", h.GetNotifications)
 		notifs.PATCH("/:id/read", h.MarkRead)
+		notifs.DELETE("/:id", h.Delete)
 		notifs.POST("/read-all", h.MarkAllRead)
 	}
 }

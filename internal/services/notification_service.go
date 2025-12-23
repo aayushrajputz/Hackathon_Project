@@ -111,3 +111,23 @@ func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID string) 
 	_, err = s.mongoClient.Collection("notifications").UpdateMany(ctx, filter, update)
 	return err
 }
+
+// DeleteNotification deletes a notification by ID for a specific user
+func (s *NotificationService) DeleteNotification(ctx context.Context, notificationID string, userID string) error {
+	notifObjID, err := primitive.ObjectIDFromHex(notificationID)
+	if err != nil {
+		return err
+	}
+	userObjID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{
+		"_id":    notifObjID,
+		"userId": userObjID,
+	}
+
+	_, err = s.mongoClient.Collection("notifications").DeleteOne(ctx, filter)
+	return err
+}
