@@ -301,8 +301,11 @@ export const useNotificationStore = create<NotificationState>()(
                     const newNotifications = state.notifications.filter((n) => n.id !== id);
 
                     // Delete from backend
+                    console.log('[Notifications] Deleting notification:', id);
                     import('./api').then(({ api }) => {
-                        api.delete(`/notifications/${id}`).catch(() => { });
+                        api.delete(`/notifications/${id}`)
+                            .then(() => console.log('[Notifications] Delete successful:', id))
+                            .catch((err) => console.error('[Notifications] Delete failed:', id, err));
                     });
 
                     return {

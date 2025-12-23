@@ -82,27 +82,34 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 func (h *NotificationHandler) Delete(c *gin.Context) {
 	firebaseUID, exists := middleware.GetUserID(c)
 	if !exists {
+		log.Println("[NotificationHandler] ❌ Delete: Unauthorized - no UserID")
 		utils.Unauthorized(c, "Unauthorized")
 		return
 	}
 
 	user, err := h.userService.GetUserByFirebaseUID(c.Request.Context(), firebaseUID)
 	if err != nil {
+		log.Printf("[NotificationHandler] ❌ Delete: User not found for UID %s", firebaseUID)
 		utils.Unauthorized(c, "User not found")
 		return
 	}
 
 	id := c.Param("id")
 	if id == "" {
+		log.Println("[NotificationHandler] ❌ Delete: No notification ID provided")
 		utils.BadRequest(c, "Notification ID required")
 		return
 	}
 
+	log.Printf("[NotificationHandler] 🗑️ Deleting notification ID=%s for UserID=%s", id, user.ID.Hex())
+
 	if err := h.notificationService.DeleteNotification(c.Request.Context(), id, user.ID.Hex()); err != nil {
+		log.Printf("[NotificationHandler] ❌ Delete failed: %v", err)
 		utils.InternalServerError(c, "Failed to delete notification")
 		return
 	}
 
+	log.Printf("[NotificationHandler] ✅ Successfully deleted notification ID=%s", id)
 	utils.Success(c, gin.H{"status": "ok"})
 }
 
