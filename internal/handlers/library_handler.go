@@ -272,9 +272,21 @@ func (h *LibraryHandler) Download(c *gin.Context) {
 		return
 	}
 
-	// Stream file from MinIO
+	// Stream file from MinIO (Cloudflare R2)
+	fmt.Printf("[DEBUG] Library Download: UserID='%s', FileID='%s', FileKey='%s', Bucket='%s'\n", userID, fileID, item.FileKey, h.minioClient.GetBucketUserFiles())
+	
+	// First check if file exists in R2
+	_, statErr := h.minioClient.GetFileInfo(c.Request.Context(), h.minioClient.GetBucketUserFiles(), item.FileKey)
+	if statErr != nil {
+		fmt.Printf("[ERROR] Library file not found in R2: FileKey='%s', Error='%v'\n", item.FileKey, statErr)
+		// File doesn't exist in storage - return 404, not 500
+		utils.NotFound(c, "File not found in storage. It may have been deleted.")
+		return
+	}
+	
 	data, err := h.minioClient.DownloadFile(c.Request.Context(), h.minioClient.GetBucketUserFiles(), item.FileKey)
 	if err != nil {
+		fmt.Printf("[ERROR] Library Download failed: FileKey='%s', Error='%v'\n", item.FileKey, err)
 		utils.InternalServerError(c, "Failed to download file")
 		return
 	}

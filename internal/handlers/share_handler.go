@@ -283,10 +283,13 @@ func (h *ShareHandler) Download(c *gin.Context) {
 	// Fetch actual document record to get MinIO path
 	var bucketName, objectName, filename, mimeType string
 
+	fmt.Printf("[DEBUG] Share Download: FileID='%s', FileType='%s'\n", share.FileID, share.FileType)
+
 	// Try fetching from 'documents' collection first
 	var doc models.Document
 	err = h.db.Collection("documents").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&doc)
 	if err == nil {
+		fmt.Printf("[DEBUG] Found in 'documents' collection: MinIOPath='%s'\n", doc.MinIOPath)
 		parts := strings.SplitN(doc.MinIOPath, "/", 2)
 		if len(parts) == 2 {
 			bucketName = parts[0]
@@ -295,10 +298,12 @@ func (h *ShareHandler) Download(c *gin.Context) {
 		filename = doc.OriginalName
 		mimeType = doc.MimeType
 	} else {
+		fmt.Printf("[DEBUG] Not found in 'documents', trying 'library': %v\n", err)
 		// Fallback: Try fetching from 'library' collection
 		var libItem LibraryItem
 		err = h.db.Collection("library").FindOne(context.Background(), bson.M{"_id": objID}).Decode(&libItem)
 		if err == nil {
+			fmt.Printf("[DEBUG] Found in 'library' collection: FileKey='%s'\n", libItem.FileKey)
             // Library items only store the object name (FileKey)
             // The bucket is the configured user files bucket
             bucketName = h.minioClient.GetBucketUserFiles()
@@ -307,6 +312,7 @@ func (h *ShareHandler) Download(c *gin.Context) {
             filename = libItem.FileName
             mimeType = libItem.MimeType
 		} else {
+			fmt.Printf("[ERROR] Not found in 'library' either: %v\n", err)
             // Not found in either
             c.JSON(http.StatusNotFound, gin.H{"error": "Original file not found in library or documents"})
             return
@@ -335,14 +341,14 @@ func (h *ShareHandler) Download(c *gin.Context) {
             fmt.Printf("[DEBUG] Found files: %v\n", files)
         }
 
-		c.JSON(http.StatusNotFound, gin.H{"error": "File not found in storage"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found in storage. It may have been deleted or expired."})
 		return
 	}
 
 	// Get object stream
 	object, err := h.minioClient.GetObject(context.Background(), bucketName, objectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve file. Please try again."})
 		return
 	}
 	defer object.Close()
