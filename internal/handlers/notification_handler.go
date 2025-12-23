@@ -47,7 +47,22 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, gin.H{"notifications": notifs})
+	// Transform notifications to use string IDs for frontend compatibility
+	transformed := make([]gin.H, len(notifs))
+	for i, n := range notifs {
+		transformed[i] = gin.H{
+			"id":        n.ID.Hex(),
+			"userId":    n.UserID.Hex(),
+			"title":     n.Title,
+			"message":   n.Message,
+			"type":      n.Type,
+			"read":      n.Read,
+			"link":      n.Link,
+			"createdAt": n.CreatedAt,
+		}
+	}
+
+	utils.Success(c, gin.H{"notifications": transformed})
 }
 
 // MarkRead marks a notification as read
