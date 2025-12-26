@@ -184,6 +184,23 @@ func (h *AuthHandler) SyncStorage(c *gin.Context) {
 	})
 }
 
+// GetStats handles GET /api/v1/auth/stats
+func (h *AuthHandler) GetStats(c *gin.Context) {
+	firebaseUID, exists := middleware.GetUserID(c)
+	if !exists {
+		utils.Unauthorized(c, "Not authenticated")
+		return
+	}
+
+	stats, err := h.userService.GetUserStats(c.Request.Context(), firebaseUID)
+	if err != nil {
+		utils.InternalServerError(c, "Failed to fetch user stats")
+		return
+	}
+
+	utils.Success(c, stats)
+}
+
 // RegisterRoutes registers all auth routes
 func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	auth := r.Group("/auth")
@@ -196,5 +213,6 @@ func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Hand
 		auth.POST("/logout", authMiddleware, h.Logout)
 		auth.PUT("/profile", authMiddleware, h.UpdateProfile)
 		auth.POST("/sync-storage", authMiddleware, h.SyncStorage)
+		auth.GET("/stats", authMiddleware, h.GetStats)
 	}
 }

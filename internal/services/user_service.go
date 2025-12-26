@@ -267,3 +267,47 @@ func (s *UserService) IncrementCounter(ctx context.Context, firebaseUID string, 
 	_, err := collection.UpdateOne(ctx, bson.M{"firebaseUid": firebaseUID}, bson.M{"$inc": bson.M{field: 1}})
 	return err
 }
+
+// GetUserStats returns statistics for a user
+func (s *UserService) GetUserStats(ctx context.Context, firebaseUID string) (map[string]int64, error) {
+	// Aggregate from shares collection
+	pipeline := []bson.M{
+		{"$match": bson.M{"creatorId": firebaseUID}},
+		{"$group": bson.M{
+			"_id":             nil,
+			"totalShared":     bson.M{"$sum": 1},
+			"totalViews":      bson.M{"$sum": "$stats.views"},
+			"totalDownloads":  bson.M{"$sum": "$stats.downloads"},
+		}},
+	}
+
+	cursor, err := s.mongoClient.Collection("shares").Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to aggregate stats: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var result []struct {
+		TotalShared    int64 `bson:"totalShared"`
+		TotalViews     int64 `bson:"totalViews"`
+		TotalDownloads int64 `bson:"totalDownloads"`
+	}
+
+	if err := cursor.All(ctx, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode stats: %w", err)
+	}
+
+	stats := map[string]int64{
+		"totalShared":    0,
+		"totalViews":     0,
+		"totalDownloads": 0,
+	}
+
+	if len(result) > 0 {
+		stats["totalShared"] = result[0].TotalShared
+		stats["totalViews"] = result[0].TotalViews
+		stats["totalDownloads"] = result[0].TotalDownloads
+	}
+
+	return stats, nil
+}

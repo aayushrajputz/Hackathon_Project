@@ -54,6 +54,10 @@ export const authApi = {
     logout: () => api.post('/auth/logout'),
 
     syncStorage: () => api.post<ApiResponse<any>>('/auth/sync-storage'),
+
+    getUserStats: () => api.get<ApiResponse<any>>('/auth/stats'),
+
+    updateProfile: (displayName: string) => api.put<ApiResponse<any>>('/auth/profile', { displayName }),
 };
 
 // PDF API

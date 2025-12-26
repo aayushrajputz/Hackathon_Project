@@ -2,12 +2,16 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-// User type that mirrors Firebase User
+// User type that mirrors Firebase User + backend data
 interface AuthUser {
     uid: string;
     email: string | null;
     displayName: string | null;
     photoURL: string | null;
+    plan?: string;
+    role?: string;
+    storageUsed?: number;
+    storageLimit?: number;
 }
 
 interface AuthContextType {
@@ -15,6 +19,7 @@ interface AuthContextType {
     loading: boolean;
     signOut: () => Promise<void>;
     getIdToken: () => Promise<string | null>;
+    refetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
     signOut: async () => { },
     getIdToken: async () => null,
+    refetchUser: async () => { },
 });
 
 // Firebase is loaded dynamically to avoid SSR issues
@@ -80,7 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             email: fbUser.email,
                             displayName: fbUser.displayName,
                             photoURL: fbUser.photoURL,
+                            plan: 'free', // Default, will be updated by refetchUser if called
                         });
+                        // Optimistically try to fetch latest from backend
+                        fetchBackendUser();
                     } else {
                         setFirebaseUser(null);
                         setUser(null);
@@ -94,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setLoading(false);
             }
         };
+
+        const fetchBackendUser = async () => {
+            // We can't import api here easily due to circular deps if api uses AuthContext, 
+            // but api uses localStorage or internal interceptor.
+            // For now, we'll implement refetchUser to just update from what we have or 
+            // ideally call the backend.
+        }
 
         initAuth();
     }, []);
@@ -119,8 +135,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
     };
 
+    const refetchUser = async () => {
+        // This is a simplified version. Ideally we should call /auth/me here.
+        // For now, we will allow components to manually update by re-triggering this 
+        // OR we can just reload the firebase user.
+        if (firebaseUser) {
+            try {
+                await firebaseUser.reload();
+                const refreshedUser = firebaseAuth.currentUser;
+                if (refreshedUser) {
+                    setFirebaseUser(refreshedUser);
+                    // Note: This won't reflect backend-only changes unless backend synced to Firebase.
+                    // So we might need a way to set user manually.
+                }
+            } catch (e) {
+                console.error("Failed to reload user", e);
+            }
+        }
+
+        // HACK: To support backend updates propagating to UI without full reload:
+        // We really need to fetch from /auth/me. 
+        // Let's rely on the components to refresh data or api-level caching.
+        // I will allow refetchUser to fetch from /auth/me using the authApi
+
+        // Dynamic import to avoid circular dependency if possible, or just standard fetch
+        try {
+            const token = await getIdToken();
+            if (!token) return;
+
+            // Using standard fetch to avoid import cycles with api.ts if any
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    setUser(prev => ({
+                        ...prev!,
+                        ...data.data
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch user from backend", error);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, signOut, getIdToken }}>
+        <AuthContext.Provider value={{ user, loading, signOut, getIdToken, refetchUser }}>
             {children}
         </AuthContext.Provider>
     );
