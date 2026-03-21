@@ -29,20 +29,13 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-50 relative overflow-hidden">
             {/* Premium Background */}
             <div className="fixed inset-0 z-0">
-                <Image
-                    src="/images/hero-bg.png"
-                    alt="Background"
-                    fill
-                    className="object-cover opacity-50"
-                    priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/50 to-slate-950"></div>
+                <div className="absolute inset-0 bg-mesh opacity-50"></div>
                 {/* Animated Orbs */}
-                <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/3 right-1/4 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/3 right-1/4 w-72 h-72 bg-cyan-300/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
             </div>
 
             <motion.div
@@ -52,26 +45,26 @@ export default function LoginPage() {
             >
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-3 mb-6">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20">
                             <FileText className="w-8 h-8 text-white" />
                         </div>
                     </Link>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                    <h1 className="text-4xl font-bold text-slate-900">
                         Welcome Back
                     </h1>
-                    <p className="text-gray-400 mt-3 text-lg">
+                    <p className="text-slate-600 mt-3 text-lg">
                         Sign in to access all premium PDF tools
                     </p>
                 </div>
 
-                <div className="p-8 space-y-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
+                <div className="p-8 space-y-6 rounded-[2rem] bg-white border border-slate-200 shadow-xl shadow-slate-200/50 backdrop-blur-xl">
                     <button
                         onClick={handleGoogleSignIn}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white rounded-xl hover:bg-gray-100 transition-colors font-semibold text-gray-700 disabled:opacity-50 shadow-lg"
+                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors font-semibold text-slate-700 disabled:opacity-50 shadow-sm hover:shadow-md"
                     >
                         {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                         ) : (
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
                                 <path
@@ -96,50 +89,51 @@ export default function LoginPage() {
                     </button>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex-1 h-px bg-white/10"></div>
-                        <span className="text-sm text-gray-500">Secure Login</span>
-                        <div className="flex-1 h-px bg-white/10"></div>
+                        <div className="flex-1 h-px bg-slate-200"></div>
+                        <span className="text-sm text-slate-500 font-medium">Secure Login</span>
+                        <div className="flex-1 h-px bg-slate-200"></div>
                     </div>
 
                     <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-sm text-gray-400">
-                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                             </div>
                             Access all 11+ PDF tools
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-400">
-                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                             </div>
                             AI-powered features included
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-400">
-                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                             </div>
-                            Save & share your documents
+                            Save &amp; share your documents
                         </div>
                     </div>
 
-                    <p className="text-center text-xs text-gray-500 pt-2">
+                    <p className="text-center text-xs text-slate-500 pt-2 font-medium">
                         By signing in, you agree to our{' '}
-                        <Link href="/terms" className="text-cyan-400 hover:underline">
+                        <Link href="/terms" className="text-blue-600 hover:text-blue-700 hover:underline">
                             Terms
                         </Link>{' '}
                         and{' '}
-                        <Link href="/privacy" className="text-cyan-400 hover:underline">
+                        <Link href="/privacy" className="text-blue-600 hover:text-blue-700 hover:underline">
                             Privacy Policy
                         </Link>
                     </p>
                 </div>
 
-                <p className="text-center text-sm text-gray-500 mt-8">
-                    <Link href="/" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-                        ← Back to home
+                <p className="text-center text-sm text-slate-500 mt-8 font-medium">
+                    <Link href="/" className="text-blue-600 hover:text-blue-700 hover:underline transition-colors">
+                        &larr; Back to home
                     </Link>
                 </p>
             </motion.div>
         </div>
     );
 }
+

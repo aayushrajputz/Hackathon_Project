@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Star, Loader2 } from 'lucide-react';
+import { Check, Star, Loader2, ShieldCheck, Zap, Server, Globe, Crown, ArrowRight, Shield } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { paymentApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 
 // Load Razorpay script
 const loadRazorpay = () => {
@@ -18,84 +19,73 @@ const loadRazorpay = () => {
     });
 };
 
-// Updated plans matching the config/plans.go storage limits
 const plans = [
     {
-        name: 'Free',
-        emoji: '🆓',
+        name: 'Lite',
         price: '₹0',
         period: '/month',
-        description: 'Try before you buy',
+        description: 'For occasional PDF tasks',
         features: [
-            '10 MB Storage',
-            '5 Toolkit Operations',
-            '3 AI Chats',
-            'No Sharing Links',
-            '1 Day Retention',
+            '10 MB High-Speed Storage',
+            '5 Global Operations / mo',
+            '3 Neural AI Chats / mo',
+            'Standard Encryption',
+            '24h Asset Retention',
         ],
-        color: 'bg-gray-100 dark:bg-gray-800',
-        textColor: 'text-gray-900 dark:text-white',
-        buttonColor: 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100',
         planKey: 'free',
+        isPremium: false,
     },
     {
         name: 'Student',
-        emoji: '🎓',
         price: '₹99',
-        period: '/mo',
-        description: 'Perfect for students',
+        period: '/month',
+        description: 'Accelerated academic workflow',
         features: [
-            '500 MB Storage',
-            '25 MB Max PDF',
-            '20 AI Chats/mo',
-            '30 Toolkit Ops/mo',
-            '5 Secure Links',
-            '7 Days Retention',
+            '500 MB High-Speed Storage',
+            '25 MB Max Asset Injection',
+            '20 Neural AI Chats / mo',
+            '30 Global Operations / mo',
+            '5 Secure Access Links',
+            '7 Days Asset Retention',
         ],
-        color: 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500',
-        textColor: 'text-blue-900 dark:text-blue-100',
-        buttonColor: 'bg-blue-600 text-white hover:bg-blue-700',
         planKey: 'student',
+        isPremium: false,
     },
     {
-        name: 'Pro',
-        emoji: '💼',
+        name: 'Pro Pack',
         price: '₹299',
-        period: '/mo',
-        description: 'For professionals',
+        period: '/month',
+        description: 'Professional grade document suite',
         popular: true,
         features: [
-            '2 GB Storage',
-            '100 MB Max PDF',
-            '200 AI Chats/mo',
-            'Unlimited Toolkit',
-            '50 Secure Links',
-            '30 Days Retention',
+            '2 GB High-Speed Storage',
+            '100 MB Max Asset Injection',
+            '200 Neural AI Chats / mo',
+            'Unlimited Global Operations',
+            '50 Secure Access Links',
+            '30 Days Asset Retention',
+            'Priority Neural Processing',
         ],
-        color: 'bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500',
-        textColor: 'text-purple-900 dark:text-purple-100',
-        buttonColor: 'bg-purple-600 text-white hover:bg-purple-700',
         planKey: 'pro',
+        isPremium: true,
     },
     {
-        name: 'Plus',
-        emoji: '🚀',
+        name: 'Enterprise',
         price: '₹699',
-        period: '/mo',
-        description: 'Maximum power',
+        period: '/month',
+        description: 'Unlimited document power',
         features: [
-            '10 GB Storage',
-            '300 MB Max PDF',
-            'Unlimited AI Chats',
-            'Priority Processing',
-            'API Access (Rate Limited)',
-            'Smart Caching',
-            '6 Months Retention',
+            '10 GB Managed Storage',
+            '300 MB Max Asset Injection',
+            'Unlimited Neural AI Chats',
+            'Instant Priority Processing',
+            'API Access Matrix',
+            'Advanced Smart Caching',
+            '6 Months Asset Retention',
+            'White-glove Support',
         ],
-        color: 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-2 border-amber-500',
-        textColor: 'text-amber-900 dark:text-amber-100',
-        buttonColor: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600',
         planKey: 'plus',
+        isPremium: true,
     },
 ];
 
@@ -111,15 +101,12 @@ export default function PlansPage() {
         try {
             const res = await loadRazorpay();
             if (!res) {
-                toast.error('Razorpay SDK failed to load');
+                toast.error('Payment gateway failed to initialize');
                 return;
             }
 
-            // Create Order
             const { data: response } = await paymentApi.createOrder(planKey);
-            if (!response.success) {
-                throw new Error('Order creation failed');
-            }
+            if (!response.success) throw new Error('Order creation rejected');
 
             const orderData = response.data;
 
@@ -127,8 +114,8 @@ export default function PlansPage() {
                 key: orderData.keyId,
                 amount: orderData.amount,
                 currency: 'INR',
-                name: 'BinaryPDF',
-                description: `Upgrade to ${planKey.toUpperCase()} Plan`,
+                name: 'BinaryPDF Premium',
+                description: `Activation: ${planKey.toUpperCase()} Plan`,
                 order_id: orderData.orderId,
                 handler: async function (response: any) {
                     try {
@@ -140,14 +127,13 @@ export default function PlansPage() {
                         });
 
                         if (verifyRes.data.success) {
-                            toast.success(`Successfully upgraded to ${planKey} plan!`);
+                            toast.success(`Welcome to the ${planKey} tier!`);
                             window.location.reload();
                         } else {
-                            toast.error('Payment verification failed');
+                            toast.error('Authentication verification failed');
                         }
                     } catch (err) {
-                        toast.error('Payment verification failed');
-                        console.error(err);
+                        toast.error('Payment signature mismatch');
                     }
                 },
                 prefill: {
@@ -155,122 +141,202 @@ export default function PlansPage() {
                     email: user?.email || '',
                 },
                 theme: {
-                    color: '#8b5cf6', // purple-500
+                    color: '#2563eb',
                 },
             };
 
             const paymentObject = new (window as any).Razorpay(options);
             paymentObject.open();
         } catch (error: any) {
-            console.error('Payment Error:', error);
-            toast.error(error.message || 'Something went wrong. Please try again.');
+            toast.error(error.message || 'Transmission error. Try again.');
         } finally {
             setLoadingPlan(null);
         }
     };
 
     return (
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl sm:tracking-tight lg:text-6xl">
-                    Upgrade Your Storage
-                </h1>
-                <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500 dark:text-gray-400">
-                    Choose the perfect plan for your needs. Cancel anytime.
-                </p>
-            </div>
+        <div className="relative min-h-[calc(100vh-4rem)] bg-slate-50 font-sans pb-24 overflow-hidden">
+            {/* Ambient Background */}
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-100/30 rounded-full blur-[140px] -z-10 animate-pulse-slow"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-slate-100 rounded-full blur-[120px] -z-10"></div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {plans.map((plan, index) => (
+            <div className="max-w-7xl mx-auto px-6 pt-16 md:pt-24 space-y-20 relative z-10">
+                {/* Tactical Header */}
+                <div className="text-center space-y-6 max-w-4xl mx-auto">
                     <motion.div
-                        key={plan.name}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`relative rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden ${plan.color} p-6 h-full`}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest"
                     >
-                        {plan.popular && (
-                            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-current" /> MOST POPULAR
-                            </div>
-                        )}
-
-                        <div>
-                            <h3 className={`text-xl font-semibold ${plan.textColor} flex items-center gap-2`}>
-                                <span className="text-2xl">{plan.emoji}</span>
-                                {plan.name}
-                            </h3>
-                            <div className="mt-4 flex items-baseline">
-                                <span className={`text-4xl font-extrabold tracking-tight ${plan.textColor}`}>
-                                    {plan.price}
-                                </span>
-                                <span className={`ml-1 text-lg font-semibold opacity-70 ${plan.textColor}`}>
-                                    {plan.period}
-                                </span>
-                            </div>
-                            <p className="mt-3 text-sm opacity-80">{plan.description}</p>
-
-                            <ul className="mt-6 space-y-3">
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-start">
-                                        <Check className="flex-shrink-0 w-4 h-4 text-green-500 mt-1" />
-                                        <span className="ml-2 text-sm opacity-90">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <div className="mt-8">
-                            {plan.planKey === currentPlan ? (
-                                <div className="w-full block bg-green-500 text-white text-center font-semibold py-3 rounded-xl cursor-default">
-                                    ✓ Active Plan
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => handleUpgrade(plan.planKey)}
-                                    disabled={loadingPlan !== null}
-                                    className={`w-full block text-center font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${plan.buttonColor}`}
-                                >
-                                    {loadingPlan === plan.planKey ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        plan.planKey === 'free' ? 'Downgrade' : 'Upgrade Now'
-                                    )}
-                                </button>
-                            )}
-                        </div>
+                        <Crown className="w-3.5 h-3.5" />
+                        Subscription Matrix
                     </motion.div>
-                ))}
-            </div>
-
-            {/* Storage Info */}
-            <div className="mt-12 text-center p-8 bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    Your Current Storage
-                </h3>
-                <div className="flex items-center justify-center gap-4">
-                    <div className="text-5xl font-bold text-primary-600">
-                        {formatStorageSize(user?.storageUsed || 0)}
-                    </div>
-                    <div className="text-gray-400">/</div>
-                    <div className="text-5xl font-bold text-gray-400">
-                        {formatStorageSize(user?.storageLimit || 10 * 1024 * 1024)}
-                    </div>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9]"
+                    >
+                        Provision Your <span className="text-blue-600">Storage</span>
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-slate-500 text-lg md:text-xl font-bold max-w-2xl mx-auto leading-relaxed"
+                    >
+                        Select a Tier matching your operational scale. Enterprise-grade encryption included in all provisions.
+                    </motion.p>
                 </div>
-                <p className="mt-4 text-gray-500">
-                    Plan: <span className="font-bold text-primary-500 uppercase">{currentPlan}</span> • Free users get 10MB storage.
-                </p>
+
+                {/* Grid Architecture */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {plans.map((plan, index) => (
+                        <motion.div
+                            key={plan.name}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className={clsx(
+                                "group relative rounded-[3rem] p-8 flex flex-col justify-between transition-all duration-500 border-2",
+                                plan.popular
+                                    ? "bg-white border-blue-600 shadow-2xl shadow-blue-500/10 scale-105 z-10"
+                                    : "bg-white/50 backdrop-blur-sm border-slate-200 hover:border-blue-400 hover:bg-white"
+                            )}
+                        >
+                            {plan.popular && (
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-6 py-2 rounded-full flex items-center gap-2 shadow-xl shadow-blue-500/40 tracking-widest">
+                                    <Star className="w-3.5 h-3.5 fill-current" /> MOST CHOSEN
+                                </div>
+                            )}
+
+                            <div>
+                                <div className="flex justify-between items-start mb-10">
+                                    <div className="space-y-1">
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                                        <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">{plan.description}</p>
+                                    </div>
+                                    <div className={clsx(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center",
+                                        plan.isPremium ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                                    )}>
+                                        {plan.isPremium ? <Zap className="w-6 h-6" /> : <Server className="w-6 h-6" />}
+                                    </div>
+                                </div>
+
+                                <div className="mb-10 flex items-baseline gap-1">
+                                    <span className="text-5xl font-black text-slate-900 tracking-tighter">{plan.price}</span>
+                                    <span className="text-slate-400 font-bold text-sm tracking-widest uppercase">{plan.period}</span>
+                                </div>
+
+                                <ul className="space-y-5 mb-12">
+                                    {plan.features.map((feature) => (
+                                        <li key={feature} className="flex items-start gap-3">
+                                            <div className="mt-1 flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
+                                                <Check className="w-2.5 h-2.5 text-blue-600 stroke-[4]" />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-600 leading-tight">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                {plan.planKey === currentPlan ? (
+                                    <div className="w-full py-5 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 text-center font-black text-[11px] uppercase tracking-widest shadow-sm">
+                                        Active Profile
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => handleUpgrade(plan.planKey)}
+                                        disabled={loadingPlan !== null}
+                                        className={clsx(
+                                            "w-full py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-3",
+                                            plan.popular
+                                                ? "bg-blue-600 text-white shadow-xl shadow-blue-500/30 hover:bg-blue-700 hover:-translate-y-1"
+                                                : "bg-slate-900 text-white hover:bg-black"
+                                        )}
+                                    >
+                                        {loadingPlan === plan.planKey ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <span>{plan.planKey === 'free' ? 'Revert to Lite' : 'Activate Tier'}</span>
+                                                <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Storage Diagnostics */}
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-[3.5rem] p-12 shadow-sm relative overflow-hidden group"
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-[80px] -z-10 translate-x-1/3 -translate-y-1/3"></div>
+
+                    <div className="flex flex-col md:flex-row items-center gap-12">
+                        <div className="flex-1 space-y-6 text-center md:text-left">
+                            <div className="flex items-center gap-4 justify-center md:justify-start">
+                                <div className="w-12 h-12 rounded-[1.25rem] bg-slate-900 flex items-center justify-center shadow-lg">
+                                    <Server className="w-6 h-6 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Vault Capacity</h3>
+                            </div>
+                            <p className="text-slate-500 font-bold leading-relaxed">
+                                Real-time diagnostic of your current cloud storage provision. <span className="text-blue-600">Lite</span> users are capped at 10MB of indexed document data.
+                            </p>
+                            <div className="flex items-center gap-6 justify-center md:justify-start">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                    Secure
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <Globe className="w-4 h-4 text-blue-500" />
+                                    Global
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-32 bg-slate-100 hidden md:block"></div>
+
+                        <div className="space-y-4 min-w-[240px]">
+                            <div className="flex items-end justify-center gap-3">
+                                <div className="text-6xl font-black text-blue-600 tracking-tighter">
+                                    {formatStorageSize(user?.storageUsed || 0)}
+                                </div>
+                                <div className="text-slate-300 font-black text-2xl mb-1">/</div>
+                                <div className="text-3xl font-bold text-slate-300 tracking-tight mb-1">
+                                    {formatStorageSize(user?.storageLimit || 10 * 1024 * 1024)}
+                                </div>
+                            </div>
+                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+                                <div
+                                    className="h-full bg-blue-600 rounded-full transition-all duration-1000"
+                                    style={{ width: `${Math.min(((user?.storageUsed || 0) / (user?.storageLimit || 10 * 1024 * 1024)) * 100, 100)}%` }}
+                                ></div>
+                            </div>
+                            <p className="text-[10px] text-center font-black text-slate-400 uppercase tracking-widest">
+                                {(((user?.storageUsed || 0) / (user?.storageLimit || 10 * 1024 * 1024)) * 100).toFixed(1)}% Capacity Occupied
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );
 }
 
-// Helper function to format storage size
 function formatStorageSize(bytes: number): string {
-    if (bytes === 0) return '0 MB';
+    if (bytes === 0) return '0MB';
     const mb = bytes / (1024 * 1024);
     if (mb >= 1024) {
-        return `${(mb / 1024).toFixed(1)} GB`;
+        return `${(mb / 1024).toFixed(1)}GB`;
     }
-    return `${Math.round(mb)} MB`;
+    return `${Math.round(mb)}MB`;
 }

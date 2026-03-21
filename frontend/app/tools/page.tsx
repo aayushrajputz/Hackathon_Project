@@ -12,171 +12,288 @@ import {
     Droplet,
     Hash,
     Crop,
-    ArrowRight
+    ArrowRight,
+    Search,
+    Wand2,
+    FileText,
+    ShieldCheck,
+    Type,
+    Award
 } from 'lucide-react';
+import { useState } from 'react';
+import clsx from 'clsx';
 
 const tools = [
     {
         name: 'Merge PDF',
-        description: 'Combine multiple PDFs into one document',
+        description: 'Combine multiple PDFs into one document seamlessly',
         icon: Merge,
         href: '/tools/merge',
-        color: 'from-blue-500 to-indigo-600',
-        bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-        textColor: 'text-blue-600',
+        category: 'Edit',
     },
     {
         name: 'Split PDF',
-        description: 'Divide PDF into separate files by page ranges',
+        description: 'Extract specific page ranges into new files',
         icon: Scissors,
         href: '/tools/split',
-        color: 'from-purple-500 to-pink-600',
-        bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-        textColor: 'text-purple-600',
+        category: 'Edit',
     },
     {
         name: 'Compress PDF',
-        description: 'Reduce file size while maintaining quality',
+        description: 'Optimize file size without losing quality',
         icon: Minimize2,
         href: '/tools/compress',
-        color: 'from-green-500 to-emerald-600',
-        bgColor: 'bg-green-100 dark:bg-green-900/30',
-        textColor: 'text-green-600',
+        category: 'Optimize',
     },
     {
-        name: 'Rotate Pages',
-        description: 'Rotate pages 90°, 180°, or 270°',
+        name: 'Rotate PDF',
+        description: 'Correct orientation of your PDF pages',
         icon: RotateCw,
         href: '/tools/rotate',
-        color: 'from-orange-500 to-amber-600',
-        bgColor: 'bg-orange-100 dark:bg-orange-900/30',
-        textColor: 'text-orange-600',
+        category: 'Edit',
     },
     {
         name: 'Extract Pages',
-        description: 'Pull specific pages from a PDF',
+        description: 'Select and export specific pages only',
         icon: FileOutput,
         href: '/tools/extract',
-        color: 'from-cyan-500 to-blue-600',
-        bgColor: 'bg-cyan-100 dark:bg-cyan-900/30',
-        textColor: 'text-cyan-600',
+        category: 'Edit',
     },
     {
         name: 'Organize Pages',
-        description: 'Reorder pages with AI suggestions',
+        description: 'Rearrange or delete pages with ease',
         icon: Layers,
         href: '/tools/organize',
-        color: 'from-violet-500 to-purple-600',
-        bgColor: 'bg-violet-100 dark:bg-violet-900/30',
-        textColor: 'text-violet-600',
+        category: 'AI Powered',
     },
     {
         name: 'Add Watermark',
-        description: 'Add text watermarks to all pages',
+        description: 'Protect documents with custom identity layers',
         icon: Droplet,
         href: '/tools/watermark',
-        color: 'from-teal-500 to-cyan-600',
-        bgColor: 'bg-teal-100 dark:bg-teal-900/30',
-        textColor: 'text-teal-600',
+        category: 'Secure',
     },
     {
         name: 'Page Numbers',
-        description: 'Add page numbers to your PDF',
+        description: 'Automate document numbering for indexing',
         icon: Hash,
         href: '/tools/page-numbers',
-        color: 'from-rose-500 to-pink-600',
-        bgColor: 'bg-rose-100 dark:bg-rose-900/30',
-        textColor: 'text-rose-600',
+        category: 'Annotate',
     },
     {
         name: 'Crop PDF',
-        description: 'Adjust page margins and visible area',
+        description: 'Adjust visible margins and page dimensions',
         icon: Crop,
         href: '/tools/crop',
-        color: 'from-amber-500 to-yellow-600',
-        bgColor: 'bg-amber-100 dark:bg-amber-900/30',
-        textColor: 'text-amber-600',
+        category: 'Edit',
     },
     {
         name: 'Draw Text',
-        description: 'Add custom text at any position on your PDF',
-        icon: Layers,
+        description: 'Add custom annotations at any position',
+        icon: Type,
         href: '/tools/draw-text',
-        color: 'from-indigo-500 to-purple-600',
-        bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
-        textColor: 'text-indigo-600',
+        category: 'Annotate',
     },
     {
         name: 'Add Badge',
-        description: 'Add trophies, medals, or verification badges',
-        icon: Layers,
+        description: 'Verify documents with professional badges',
+        icon: Award,
         href: '/tools/add-badge',
-        color: 'from-yellow-400 to-orange-500',
-        bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-        textColor: 'text-yellow-600',
+        category: 'Verify',
     },
 ];
 
+const categories = ['All', 'Edit', 'Optimize', 'Secure', 'Annotate', 'AI Powered'];
+
 export default function ToolsIndexPage() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('All');
+
+    const filteredTools = tools.filter(tool => {
+        const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tool.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = activeCategory === 'All' || tool.category === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
+
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-                    PDF Tools
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-xl mx-auto">
-                    Free online tools to merge, split, compress, and transform your PDF files.
-                    No registration required.
-                </p>
-            </div>
+        <div className="relative min-h-screen font-sans bg-slate-50/50">
+            {/* Background elements */}
+            <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
 
-            {/* Tools Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tools.map((tool, index) => (
+            <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
+                {/* Header Section */}
+                <div className="flex flex-col items-center text-center mb-16 space-y-6">
                     <motion.div
-                        key={tool.name}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="px-4 py-1.5 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-[0.2em]"
                     >
-                        <Link
-                            href={tool.href}
-                            className="card-hover p-6 flex flex-col h-full group"
-                        >
-                            <div className={`w-14 h-14 rounded-2xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                                <tool.icon className={`w-7 h-7 ${tool.textColor}`} />
-                            </div>
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                {tool.name}
-                            </h2>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
-                                {tool.description}
-                            </p>
-                            <div className="mt-4 flex items-center gap-1 text-sm font-medium text-primary-600 group-hover:text-primary-700">
-                                Use Tool
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                        </Link>
+                        Premium PDF Suite
                     </motion.div>
-                ))}
-            </div>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight"
+                    >
+                        Master Your <span className="text-blue-600">Documents</span>
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-slate-500 text-lg md:text-xl max-w-2xl font-medium leading-relaxed"
+                    >
+                        Professional grade tools to edit, optimize, and secure your PDF files in seconds. No installation required.
+                    </motion.p>
+                </div>
 
-            {/* CTA */}
-            <div className="card p-8 text-center bg-gradient-to-br from-primary-500 to-purple-600">
-                <h2 className="text-2xl font-bold text-white mb-2">
-                    Need More Features?
-                </h2>
-                <p className="text-white/80 mb-6">
-                    Sign in to access AI-powered features, save your files, and more.
-                </p>
-                <Link
-                    href="/login"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+                {/* Filter & Search Bar */}
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-12">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={clsx(
+                                    "px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border",
+                                    activeCategory === cat
+                                        ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20"
+                                        : "bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 shadow-sm"
+                                )}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="relative w-full lg:w-96 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search tools..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-14 pr-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-bold text-slate-900 shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Tools Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredTools.map((tool, index) => (
+                        <motion.div
+                            key={tool.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                            <Link
+                                href={tool.href}
+                                className="group relative block p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm hover:shadow-xl hover:border-blue-400 hover:-translate-y-2 transition-all h-full bg-gradient-to-b hover:from-white hover:to-blue-50/30"
+                            >
+                                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg">
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
+                                </div>
+
+                                <div className="w-16 h-16 rounded-[1.5rem] bg-blue-50 border border-blue-100 flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                    <tool.icon className="w-8 h-8 text-blue-600" />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5 opacity-70">
+                                            {tool.category}
+                                        </div>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+                                            {tool.name}
+                                        </h2>
+                                    </div>
+                                    <p className="text-sm text-slate-500 font-bold leading-relaxed">
+                                        {tool.description}
+                                    </p>
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cloud Ready</span>
+                                    <div className="flex -space-x-2">
+                                        {[1, 2].map((i) => (
+                                            <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100"></div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </Link>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Empty State */}
+                {filteredTools.length === 0 && (
+                    <div className="py-20 text-center space-y-4 bg-white border border-slate-200 rounded-[3rem] shadow-sm">
+                        <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <Search className="w-10 h-10 text-slate-300" />
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900">No tools found</h3>
+                        <p className="text-slate-500 font-bold">Try adjusting your search or filters</p>
+                        <button
+                            onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}
+                            className="mt-4 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
+                        >
+                            Reset Explore
+                        </button>
+                    </div>
+                )}
+
+                {/* Desktop Premium Banner */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-20 rounded-[3.5rem] p-16 text-center bg-slate-900 shadow-2xl relative overflow-hidden group"
                 >
-                    Sign In Free
-                    <ArrowRight className="w-5 h-5" />
-                </Link>
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_120%,#2563eb_0%,transparent_50%)] opacity-30"></div>
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] group-hover:bg-blue-600/20 transition-all duration-1000"></div>
+
+                    <div className="relative z-10 max-w-3xl mx-auto space-y-10">
+                        <div className="space-y-4">
+                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                                Unlock <span className="text-blue-500">Intelligent</span> Operations
+                            </h2>
+                            <p className="text-slate-400 text-lg font-medium leading-relaxed">
+                                Join 50,000+ professionals using BinaryPDF to automate document workflows with AI precision.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                            <Link
+                                href="/login"
+                                className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-1 flex items-center justify-center gap-3 tracking-wide"
+                            >
+                                Start Free Workspace
+                                <ArrowRight className="w-5 h-5" />
+                            </Link>
+                            <Link
+                                href="/pricing"
+                                className="w-full sm:w-auto px-10 py-5 bg-slate-800 text-white font-black rounded-2xl hover:bg-slate-700 transition-all border border-slate-700 flex items-center justify-center gap-3 tracking-wide"
+                            >
+                                View Enterprise Plan
+                            </Link>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-12 pt-10 border-t border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <ShieldCheck className="w-5 h-5 text-blue-400" />
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Bank-grade Security</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Wand2 className="w-5 h-5 text-blue-400" />
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">AI Assisted</span>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

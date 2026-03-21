@@ -23,6 +23,9 @@ import {
     Zap,
     Shield,
     History,
+    FileCode,
+    Cpu,
+    Monitor
 } from 'lucide-react';
 import ShareModal from '@/components/ui/ShareModal';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -48,49 +51,44 @@ interface ConversionCard {
     outputFormat: string;
     icon: any;
     color: string;
-    glow: string;
 }
 
 const conversionCards: ConversionCard[] = [
     {
         id: 'word-to-pdf',
         title: 'Word to PDF',
-        description: 'Elite conversion for DOCX/DOC',
+        description: 'Elite conversion for DOCX/DOC formats',
         inputFormats: ['.doc', '.docx'],
         outputFormat: 'pdf',
         icon: FileText,
-        color: 'from-blue-400 to-indigo-600',
-        glow: 'shadow-blue-500/20'
+        color: 'bg-blue-600 shadow-blue-500/20',
     },
     {
         id: 'excel-to-pdf',
         title: 'Excel to PDF',
-        description: 'Precision table rendering',
+        description: 'Precision table rendering & high-fidelity preservation',
         inputFormats: ['.xls', '.xlsx'],
         outputFormat: 'pdf',
         icon: FileSpreadsheet,
-        color: 'from-emerald-400 to-teal-600',
-        glow: 'shadow-emerald-500/20'
+        color: 'bg-blue-600 shadow-blue-500/20',
     },
     {
         id: 'ppt-to-pdf',
         title: 'Slides to PDF',
-        description: 'Retain high-fidelity visuals',
+        description: 'Retain high-fidelity visuals & slide transitions',
         inputFormats: ['.ppt', '.pptx'],
         outputFormat: 'pdf',
         icon: Presentation,
-        color: 'from-orange-400 to-rose-600',
-        glow: 'shadow-orange-500/20'
+        color: 'bg-blue-600 shadow-blue-500/20',
     },
     {
         id: 'odt-to-pdf',
         title: 'ODT to PDF',
-        description: 'OpenDocument standard conversion',
+        description: 'OpenDocument standard conversion for any scale',
         inputFormats: ['.odt'],
         outputFormat: 'pdf',
-        icon: File,
-        color: 'from-purple-400 to-fuchsia-600',
-        glow: 'shadow-purple-500/20'
+        icon: FileCode,
+        color: 'bg-blue-600 shadow-blue-500/20',
     }
 ];
 
@@ -120,7 +118,7 @@ export default function ConvertPage() {
         });
 
         if (validFiles.length !== acceptedFiles.length) {
-            toast.error(`Invalid format. Allowed: ${selectedCard.inputFormats.join(', ')}`);
+            toast.error(`Invalid format integration rejected. Allowed: ${selectedCard.inputFormats.join(', ')}`);
         }
 
         setFiles(prev => [...prev, ...validFiles]);
@@ -168,10 +166,10 @@ export default function ConvertPage() {
             const { jobId: newJobId } = response.data.data;
             setJobId(newJobId);
             setStatus('queued');
-            toast.success('Conversion pipeline initiated');
+            toast.success('Conversion pipeline provisioned');
         } catch (err: any) {
             setStatus('failed');
-            setError(err.response?.data?.error?.message || 'Submission failed');
+            setError(err.response?.data?.error?.message || 'Matrix submission failed');
         }
     };
 
@@ -195,15 +193,15 @@ export default function ConvertPage() {
                             const url = window.URL.createObjectURL(new Blob([dlRes.data]));
                             setPreviewUrl(url);
                         } catch (e) {
-                            console.error("Preview retrieval failed", e);
+                            console.error("Diagnostic: Preview failed", e);
                         }
                     }
                 } else if (job.status === 'failed') {
                     setStatus('failed');
-                    setError(job.error || 'Pipeline failure');
+                    setError(job.error || 'Pipeline critical failure');
                 }
             } catch (err) {
-                console.error('Status poll error:', err);
+                console.error('Diagnostic poll error:', err);
             }
         }, 2000);
 
@@ -216,7 +214,7 @@ export default function ConvertPage() {
                 try {
                     const response = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
                     const contentDisposition = response.headers['content-disposition'];
-                    let filename = 'converted_output';
+                    let filename = 'extracted_asset';
                     if (contentDisposition) {
                         const match = contentDisposition.match(/filename="(.+)"/);
                         if (match) filename = match[1];
@@ -228,7 +226,7 @@ export default function ConvertPage() {
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                } catch (e) { toast.error('Download extraction failed'); }
+                } catch (e) { toast.error('Asset extraction error'); }
             }
             return;
         }
@@ -261,36 +259,42 @@ export default function ConvertPage() {
     };
 
     return (
-        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
-            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-20"></div>
-            <div className="absolute top-10 left-10 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-10 overflow-hidden font-sans bg-slate-50 pb-20">
+            {/* Ambient Background Lights */}
+            <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-blue-100/40 rounded-full blur-[140px] -z-10 animate-pulse-slow"></div>
 
-            <div className="relative z-10 max-w-7xl mx-auto">
-                <div className="mb-16">
+            <div className="relative z-10 max-w-7xl mx-auto space-y-16">
+                <div className="text-center space-y-6 max-w-4xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-center space-y-4"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest group cursor-default"
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 border border-white/10 backdrop-blur-md mb-4 group hover:border-blue-500/30 transition-colors">
-                            <Sparkles className="w-4 h-4 text-blue-400 group-hover:animate-spin-slow" />
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Next-Gen Conversion Engine</span>
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
-                            Universal <span className="text-gradient-premium">Converter</span>
-                        </h1>
-                        <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto">
-                            Switch document architectures with zero data loss. Powered by our proprietary rendering stack.
-                        </p>
+                        <Cpu className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-1000" />
+                        Universal Conversion Layer
                     </motion.div>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none"
+                    >
+                        Switch <span className="text-blue-600">Architectures</span>
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-slate-500 text-lg md:text-xl font-bold max-w-2xl mx-auto leading-relaxed"
+                    >
+                        Seamlessly migrate documents across formats with zero metadata loss. Powered by proprietary neural rendering.
+                    </motion.p>
                 </div>
 
                 {!selectedType ? (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
                     >
                         {conversionCards.map((card, idx) => (
                             <motion.button
@@ -299,61 +303,56 @@ export default function ConvertPage() {
                                 transition={{ delay: idx * 0.1 }}
                                 key={card.id}
                                 onClick={() => setSelectedType(card.id)}
-                                className={clsx(
-                                    "group relative p-8 rounded-[40px] bg-slate-900/40 border border-white/5 backdrop-blur-3xl text-white text-left overflow-hidden transition-all hover:scale-[1.03] hover:border-white/20 active:scale-95",
-                                    card.glow
-                                )}
+                                className="group relative p-10 rounded-[3rem] bg-white border border-slate-200 shadow-sm text-slate-900 text-left overflow-hidden transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 hover:border-blue-300"
                             >
                                 <div className={clsx(
-                                    "absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-5 blur-[60px] group-hover:opacity-10 transition-opacity",
-                                    card.color
-                                )}></div>
-
-                                <div className={clsx(
-                                    "w-16 h-16 rounded-[24px] bg-gradient-to-br p-[1px] mb-8",
-                                    card.color
+                                    "w-16 h-16 rounded-2xl flex items-center justify-center mb-10 transition-transform group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white",
+                                    "bg-blue-50 text-blue-600 shadow-sm border border-blue-100"
                                 )}>
-                                    <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
-                                        <card.icon className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
-                                    </div>
+                                    <card.icon className="w-8 h-8" />
                                 </div>
 
-                                <div className="space-y-2 relative z-10">
-                                    <h3 className="text-xl font-black tracking-tight">{card.title}</h3>
-                                    <p className="text-sm text-slate-500 font-medium leading-normal">{card.description}</p>
+                                <div className="space-y-3 relative z-10">
+                                    <h3 className="text-2xl font-black tracking-tight">{card.title}</h3>
+                                    <p className="text-sm text-slate-400 font-bold leading-relaxed">{card.description}</p>
                                 </div>
 
-                                <div className="mt-8 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-white transition-colors">
-                                    <div className="flex items-center gap-2">
-                                        <div className="px-2 py-1 rounded bg-white/5">{card.inputFormats[0]}</div>
-                                        <ArrowRight className="w-3 h-3" />
-                                        <div className="px-2 py-1 rounded bg-white/5">.{card.outputFormat}</div>
+                                <div className="mt-10 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:border-blue-200 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
+                                            {card.inputFormats[0]}
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                                        <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] font-black text-white uppercase tracking-widest shadow-xl">
+                                            {card.outputFormat}
+                                        </div>
                                     </div>
-                                    <Zap className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-yellow-400" />
+                                    <Zap className="w-5 h-5 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                                 </div>
                             </motion.button>
                         ))}
                     </motion.div>
                 ) : (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="max-w-4xl mx-auto space-y-8"
+                        className="max-w-4xl mx-auto space-y-10"
                     >
                         <div className="flex items-center justify-between">
                             <button
                                 onClick={() => { setSelectedType(null); handleReset(); }}
-                                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-bold text-sm"
+                                className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-600 shadow-sm transition-all font-black text-[10px] uppercase tracking-widest group"
                             >
-                                <ChevronLeft className="w-4 h-4" />
-                                Return to Matrix
+                                <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                Back to Control Center
                             </button>
-                            <div className="px-6 py-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black text-xs uppercase tracking-widest">
+                            <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20">
+                                <Zap className="w-4 h-4" />
                                 {selectedCard!.title} ACTIVE
                             </div>
                         </div>
 
-                        <div className="glass-card-premium overflow-hidden border-white/10">
+                        <div className="bg-white border border-slate-200 shadow-sm rounded-[4rem] overflow-hidden">
                             <AnimatePresence mode="wait">
                                 {status === 'idle' ? (
                                     <motion.div
@@ -366,50 +365,59 @@ export default function ConvertPage() {
                                         <div
                                             {...getRootProps()}
                                             className={clsx(
-                                                "dropzone-premium group h-80 flex items-center justify-center border-dashed cursor-pointer relative",
-                                                isDragActive ? "border-blue-500/50 bg-blue-500/5" : "border-white/5"
+                                                "group h-[400px] flex items-center justify-center border-4 border-dashed cursor-pointer rounded-[3.5rem] transition-all duration-500 relative overflow-hidden",
+                                                isDragActive ? "border-blue-600 bg-blue-50/50" : "border-slate-100 bg-slate-50/30 hover:bg-blue-50/50 hover:border-blue-400"
                                             )}
                                         >
                                             <input {...getInputProps()} />
-                                            <div className="flex flex-col items-center gap-6 text-center">
-                                                <div className="relative">
-                                                    <div className="w-24 h-24 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                        <Upload className="w-10 h-10 text-blue-400" />
-                                                    </div>
+                                            <div className="flex flex-col items-center gap-8 text-center px-12 z-10">
+                                                <div className="w-28 h-28 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-inner">
+                                                    <Upload className="w-12 h-12 text-blue-600" />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <h3 className="text-2xl font-black text-white tracking-tight">DROP PAYLOAD HERE</h3>
-                                                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest leading-relaxed">
-                                                        Accepting: {selectedCard!.inputFormats.join(', ')}
-                                                    </p>
+                                                <div className="space-y-4">
+                                                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">DROP PAYLOAD HERE</h3>
+                                                    <div className="flex items-center justify-center gap-3">
+                                                        {selectedCard!.inputFormats.map(ext => (
+                                                            <span key={ext} className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:border-blue-200 transition-colors">{ext}</span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {files.length > 0 && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
+                                                initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className="space-y-4"
+                                                className="space-y-6"
                                             >
-                                                <div className="flex items-center justify-between">
-                                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Selected Archives ({files.length})</h3>
-                                                    <button onClick={handleReset} className="text-xs font-bold text-rose-500 hover:underline">Discard All</button>
+                                                <div className="flex items-center justify-between px-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                                                            <History className="w-4 h-4 text-white" />
+                                                        </div>
+                                                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Injection Matrix ({files.length} Assets)</h3>
+                                                    </div>
+                                                    <button onClick={handleReset} className="text-[10px] font-black text-rose-500 hover:bg-rose-50 px-4 py-2 rounded-xl transition-all uppercase tracking-widest">Wipe Buffer</button>
                                                 </div>
-                                                <div className="grid gap-3">
+                                                <div className="grid gap-4">
                                                     {files.map((file, idx) => (
-                                                        <div key={idx} className="group flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center border border-white/10 group-hover:border-blue-500/30 transition-colors">
-                                                                    <FileText className="w-6 h-6 text-blue-400" />
+                                                        <div key={idx} className="group flex items-center justify-between p-6 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                                    <FileText className="w-8 h-8" />
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-sm font-black text-white max-w-[400px] truncate">{file.name}</p>
-                                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{formatBytes(file.size)}</p>
+                                                                    <p className="text-lg font-black text-slate-900 max-w-[500px] truncate tracking-tight">{file.name}</p>
+                                                                    <div className="flex items-center gap-3 mt-1">
+                                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{formatBytes(file.size)}</span>
+                                                                        <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
+                                                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">VERIFIED</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <button onClick={() => removeFile(idx)} className="p-2 rounded-xl bg-rose-500/10 text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
-                                                                <X className="w-4 h-4" />
+                                                            <button onClick={() => removeFile(idx)} className="p-4 rounded-2xl bg-slate-50 hover:bg-rose-50 hover:text-rose-500 text-slate-400 transition-all border border-transparent hover:border-rose-100">
+                                                                <X className="w-6 h-6" />
                                                             </button>
                                                         </div>
                                                     ))}
@@ -417,11 +425,11 @@ export default function ConvertPage() {
 
                                                 <button
                                                     onClick={handleConvert}
-                                                    className="w-full btn-premium py-6 group gap-4 mt-8"
+                                                    className="w-full py-7 rounded-[2rem] font-black flex items-center justify-center gap-6 text-white bg-blue-600 shadow-2xl shadow-blue-500/40 hover:bg-blue-700 hover:-translate-y-1 transition-all mt-10 group"
                                                 >
-                                                    <RefreshCw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-700" />
-                                                    <span className="text-lg">INITIALIZE PIPELINE</span>
-                                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                    <RefreshCw className="w-7 h-7 group-hover:rotate-180 transition-transform duration-1000" />
+                                                    <span className="text-base tracking-[0.3em] uppercase">Initialize Pipeline Matrix</span>
+                                                    <ArrowRight className="w-6 h-6 group-hover:translate-x-3 transition-transform" />
                                                 </button>
                                             </motion.div>
                                         )}
@@ -432,35 +440,37 @@ export default function ConvertPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        className="p-20 flex flex-col items-center justify-center space-y-12"
+                                        className="p-24 flex flex-col items-center justify-center space-y-12"
                                     >
                                         <div className="relative">
-                                            <div className="w-32 h-32 rounded-full border-4 border-white/5 border-t-blue-500 animate-spin"></div>
+                                            <div className="w-40 h-40 rounded-full border-8 border-slate-50 border-t-blue-600 animate-spin"></div>
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <RefreshCw className="w-10 h-10 text-blue-400/50 animate-pulse" />
+                                                <Zap className="w-12 h-12 text-blue-600 animate-pulse" />
                                             </div>
-                                            <div className="absolute inset-0 bg-blue-500/10 blur-[60px] rounded-full"></div>
                                         </div>
 
-                                        <div className="text-center space-y-8 w-full max-w-md">
+                                        <div className="text-center space-y-10 w-full max-w-lg">
                                             <div className="space-y-4">
-                                                <h3 className="text-3xl font-black text-white tracking-tight uppercase">
-                                                    {status === 'uploading' ? 'Ingesting Payload' :
-                                                        status === 'queued' ? 'In Queue' : 'Decoupling Data'}
+                                                <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">
+                                                    {status === 'uploading' ? 'Ingesting Asset' :
+                                                        status === 'queued' ? 'In Pipeline' : 'Mutating Metadata'}
                                                 </h3>
-                                                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Network Speed: Optimized • Engine: Enterprise</p>
+                                                <div className="flex items-center justify-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 py-2 border border-slate-100 rounded-xl px-4">
+                                                    <Shield className="w-3.5 h-3.5" />
+                                                    Active Encryption Standard
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                                    <span>Progression</span>
-                                                    <span className="text-blue-400">{progress}%</span>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
+                                                    <span>Progression Map</span>
+                                                    <span>{progress}% Matrix Locked</span>
                                                 </div>
-                                                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                                                <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-50 p-1">
                                                     <motion.div
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${progress}%` }}
-                                                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                                        className="h-full bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.4)]"
                                                     />
                                                 </div>
                                             </div>
@@ -471,97 +481,105 @@ export default function ConvertPage() {
                                         key="completed"
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="p-12 space-y-12"
+                                        className="p-16 space-y-16"
                                     >
-                                        <div className="text-center space-y-6">
-                                            <div className="w-24 h-24 rounded-[40px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-2xl animate-float">
-                                                <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                        <div className="text-center space-y-8">
+                                            <div className="w-28 h-28 rounded-[3rem] bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto shadow-inner animate-in zoom-in duration-1000">
+                                                <CheckCircle className="w-14 h-14 text-emerald-500" />
                                             </div>
-                                            <div>
-                                                <h2 className="text-5xl font-black tracking-tighter text-white uppercase">MISSION SUCCESS</h2>
-                                                <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs mt-4">Document Architecture Converted to {selectedCard?.outputFormat}</p>
+                                            <div className="space-y-3">
+                                                <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase leading-none">Matrix Sync Locked</h2>
+                                                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Architecture Migrated to {selectedCard?.outputFormat} Standard</p>
                                             </div>
                                         </div>
 
-                                        <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="grid md:grid-cols-2 gap-6">
                                             <button
                                                 onClick={handleDownload}
-                                                className="w-full btn-premium py-6 flex items-center justify-center gap-4 text-lg"
+                                                className="w-full py-7 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[2.5rem] flex items-center justify-center gap-4 text-[11px] uppercase tracking-[0.3em] transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1"
                                             >
-                                                <Download className="w-6 h-6" />
-                                                <span>EXTRACT ARCHIVE</span>
+                                                <Download className="w-7 h-7" />
+                                                <span>EXTRACT ASSET ARCHIVE</span>
                                             </button>
                                             <button
                                                 onClick={() => setIsShareOpen(true)}
-                                                className="w-full btn-glass py-6 border-white/10 hover:border-blue-500/50 flex items-center justify-center gap-4 text-lg"
+                                                className="w-full py-7 bg-slate-900 text-white font-black rounded-[2.5rem] flex items-center justify-center gap-4 text-[11px] uppercase tracking-[0.3em] transition-all shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-1"
                                             >
-                                                <Share2 className="w-6 h-6 text-blue-400" />
-                                                <span>NETWORK SYNC</span>
+                                                <Share2 className="w-7 h-7 text-blue-400" />
+                                                <span>SYNC TO NETWORK</span>
                                             </button>
                                         </div>
 
-                                        <div className="flex flex-col md:flex-row items-center gap-4 justify-center">
+                                        <div className="flex flex-col md:flex-row items-center gap-6 justify-center">
                                             {previewUrl && (
                                                 <button
                                                     onClick={() => setShowPreview(!showPreview)}
-                                                    className="px-8 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                                    className="px-10 py-5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3"
                                                 >
                                                     <Eye className="w-4 h-4" />
-                                                    {showPreview ? 'TERMINATE PREVIEW' : 'VISUAL VERIFICATION'}
+                                                    {showPreview ? 'CLOSE VISUAL BUFFER' : 'LAUNCH VISUAL VERIFIER'}
                                                 </button>
                                             )}
                                             <button
                                                 onClick={handleReset}
-                                                className="px-8 py-3 rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                                className="px-10 py-5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3"
                                             >
                                                 <History className="w-4 h-4" />
-                                                COMMENCE NEW JOB
+                                                INITIALIZE NEW JOB
                                             </button>
                                         </div>
 
                                         {showPreview && previewUrl && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 30 }}
+                                                initial={{ opacity: 0, y: 50 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className="pt-12 border-t border-white/5 space-y-8"
+                                                className="pt-16 border-t border-slate-100 space-y-10"
                                             >
-                                                <div className="flex items-center justify-between">
-                                                    <h3 className="text-xl font-black text-white tracking-tight uppercase">High-Fidelity Preview</h3>
+                                                <div className="flex items-center justify-between px-6">
                                                     <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                                                            <Monitor className="w-5 h-5 text-white" />
+                                                        </div>
+                                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">High-Fid Verification</h3>
+                                                    </div>
+                                                    <div className="flex items-center gap-5">
                                                         <button
                                                             disabled={pageNumber <= 1}
                                                             onClick={() => setPageNumber(p => p - 1)}
-                                                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 disabled:opacity-30 transition-all"
+                                                            className="p-4 bg-white border border-slate-200 shadow-sm rounded-2xl hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-30 transition-all"
                                                         >
-                                                            <ChevronLeft className="w-5 h-5 text-white" />
+                                                            <ChevronLeft className="w-6 h-6" />
                                                         </button>
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                            Page {pageNumber} / {numPages || '...'}
+                                                        <span className="text-[11px] font-black text-slate-900 bg-white border border-slate-200 px-6 py-2.5 rounded-2xl uppercase tracking-[0.2em] shadow-smmin-w-[120px] text-center">
+                                                            LAYER {pageNumber} / {numPages || '...'}
                                                         </span>
                                                         <button
                                                             disabled={numPages ? pageNumber >= numPages : true}
                                                             onClick={() => setPageNumber(p => p + 1)}
-                                                            className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 disabled:opacity-30 transition-all"
+                                                            className="p-4 bg-white border border-slate-200 shadow-sm rounded-2xl hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-30 transition-all"
                                                         >
-                                                            <ChevronRight className="w-5 h-5 text-white" />
+                                                            <ChevronRight className="w-6 h-6" />
                                                         </button>
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-slate-950/80 rounded-[40px] p-8 border border-white/5 flex items-center justify-center min-h-[600px] shadow-inner">
-                                                    <Document
-                                                        file={previewUrl}
-                                                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                                                        loading={<Loader2 className="w-12 h-12 animate-spin text-blue-500" />}
-                                                    >
-                                                        <Page
-                                                            pageNumber={pageNumber}
-                                                            width={Math.min(window.innerWidth - 100, 600)}
-                                                            renderTextLayer={false}
-                                                            renderAnnotationLayer={false}
-                                                            className="shadow-[0_40px_100px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden"
-                                                        />
-                                                    </Document>
+                                                <div className="bg-slate-100 rounded-[4rem] p-10 border border-slate-200 flex items-center justify-center min-h-[700px] shadow-inner relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-blue-600/5 backdrop-blur-[2px]"></div>
+                                                    <div className="relative z-10 transition-transform hover:scale-[1.02] duration-700">
+                                                        <Document
+                                                            file={previewUrl}
+                                                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                                            loading={<Loader2 className="w-16 h-16 animate-spin text-blue-600" />}
+                                                        >
+                                                            <Page
+                                                                pageNumber={pageNumber}
+                                                                width={Math.min(window.innerWidth - 100, 700)}
+                                                                renderTextLayer={false}
+                                                                renderAnnotationLayer={false}
+                                                                className="shadow-[0_40px_80px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden border border-white"
+                                                            />
+                                                        </Document>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -571,41 +589,41 @@ export default function ConvertPage() {
                                         key="failed"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="p-20 text-center space-y-8"
+                                        className="p-24 text-center space-y-12"
                                     >
-                                        <div className="w-24 h-24 rounded-[40px] bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
-                                            <XCircle className="w-12 h-12 text-rose-500" />
+                                        <div className="w-28 h-28 rounded-[3rem] bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto shadow-inner">
+                                            <XCircle className="w-16 h-16 text-rose-500" />
                                         </div>
-                                        <div className="space-y-4">
-                                            <h3 className="text-3xl font-black text-white uppercase tracking-tight">PIPELINE CRITICAL FAILURE</h3>
-                                            <p className="text-rose-400 font-bold bg-rose-500/5 py-3 px-6 rounded-2xl border border-rose-500/10 inline-block font-mono text-sm">
-                                                ERROR: {error || 'GENERIC_CONVERSION_FAULT'}
-                                            </p>
+                                        <div className="space-y-6">
+                                            <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">PIPELINE CRITICAL FAULT</h3>
+                                            <div className="bg-rose-50 py-5 px-10 rounded-[2rem] border border-rose-100 inline-block">
+                                                <p className="text-rose-600 font-black font-mono text-sm uppercase tracking-widest">ERROR CODE: {error || 'UNCERTAIN_LOGIC_STATE'}</p>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={handleReset}
-                                            className="px-12 py-5 rounded-[32px] bg-white border border-white text-slate-900 font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                            className="px-14 py-6 rounded-[2.5rem] bg-slate-900 border border-slate-800 text-white font-black text-[11px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 block mx-auto mt-10 hover:-translate-y-1"
                                         >
-                                            RESTART SYSTEM
+                                            RESTART CONVERSION MATRIX
                                         </button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
+                        <div className="grid md:grid-cols-3 gap-8">
                             {[
-                                { icon: Shield, title: 'Safe Protocols', desc: 'Secure Sandbox Extraction' },
-                                { icon: Zap, title: 'Edge Processing', desc: 'Sub-second Latency conversion' },
-                                { icon: FileText, title: 'Preservation', desc: 'Vector Layout Maintenance' }
+                                { icon: Shield, title: 'Safe Protocols', desc: 'Secure Sandbox Mutating' },
+                                { icon: Zap, title: 'Edge Compute', desc: 'Sub-second Matrix Shifting' },
+                                { icon: FileCode, title: 'Semantic Zero', desc: 'Preserving Logic Structures' }
                             ].map((feature, i) => (
-                                <div key={i} className="glass-card-premium p-6 flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center">
-                                        <feature.icon className="w-6 h-6 text-slate-400" />
+                                <div key={i} className="bg-white border border-slate-100 shadow-sm rounded-[2.5rem] p-8 flex items-center gap-6 hover:-translate-y-2 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                                        <feature.icon className="w-7 h-7" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-white uppercase tracking-widest">{feature.title}</p>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-tighter">{feature.desc}</p>
+                                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1.5">{feature.title}</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none opacity-70">{feature.desc}</p>
                                     </div>
                                 </div>
                             ))}
@@ -624,4 +642,12 @@ export default function ConvertPage() {
             )}
         </div>
     );
+}
+
+function formatBytes(bytes: number) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }

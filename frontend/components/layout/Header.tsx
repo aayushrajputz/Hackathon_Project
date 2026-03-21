@@ -23,7 +23,6 @@ export default function Header() {
         const handleScroll = () => setIsScrolled(window.scrollY > 0);
         window.addEventListener('scroll', handleScroll);
 
-        // Close menu when clicking outside
         const handleClickOutside = (event: MouseEvent) => {
             if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
                 setShowProfileMenu(false);
@@ -53,31 +52,45 @@ export default function Header() {
     return (
         <header
             className={clsx(
-                "sticky top-0 z-40 h-20 flex items-center justify-between px-4 md:px-8 transition-all duration-300",
-                isScrolled ? "bg-slate-950/80 backdrop-blur-xl border-b border-white/5 py-2" : "bg-transparent py-4"
+                "sticky top-0 z-40 flex items-center justify-between px-6 md:px-10 transition-all duration-500 font-sans",
+                isScrolled ? "bg-white/80 backdrop-blur-2xl border-b border-slate-200 py-3.5 shadow-xl shadow-blue-500/5" : "bg-transparent py-6"
             )}
         >
             <div className="flex items-center gap-6">
                 <button
-                    className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-900 border border-white/10 text-white"
+                    className="md:hidden w-11 h-11 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-800 shadow-sm"
                     onClick={() => document.dispatchEvent(new CustomEvent('toggle-sidebar'))}
                 >
                     <Menu className="w-5 h-5" />
                 </button>
 
                 <div className="flex flex-col">
-                    <h2 className="text-xl font-black text-white tracking-tight">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter">
                         {getPageTitle()}
                     </h2>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        <span>Systems</span>
-                        <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                        <span>Active</span>
+                    <div className="flex items-center gap-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        <span>Systems Cloud</span>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm relative">
+                            <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                        </div>
+                        <span className="text-emerald-600">Operational</span>
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
+                <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-400 group focus-within:border-blue-500 focus-within:bg-white transition-all">
+                    <Search className="w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search modules..."
+                        className="bg-transparent border-none focus:outline-none text-xs font-bold text-slate-900 placeholder:text-slate-400 w-32"
+                    />
+                    <kbd className="text-[10px] font-black tracking-widest bg-white border border-slate-200 px-1.5 py-0.5 rounded-md shadow-sm">⌘K</kbd>
+                </div>
+
+                <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
+
                 <NotificationCenter />
 
                 {/* User Profile Button */}
@@ -85,69 +98,78 @@ export default function Header() {
                     <div className="relative" ref={profileMenuRef}>
                         <button
                             onClick={() => setShowProfileMenu(!showProfileMenu)}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-slate-900/50 border border-white/10 hover:border-cyan-500/50 transition-all group"
+                            className="flex items-center gap-3 px-2 py-1.5 rounded-[1.25rem] bg-white border border-slate-200 hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/10 transition-all group"
                         >
-                            {user.photoURL ? (
-                                <img
-                                    src={user.photoURL}
-                                    alt={user.displayName || "User"}
-                                    className="w-8 h-8 rounded-lg object-cover"
-                                />
-                            ) : (
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                                    <span className="text-sm font-bold text-white">
-                                        {user.displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
-                                    </span>
-                                </div>
-                            )}
-                            <div className="hidden md:block text-left">
-                                <p className="text-sm font-medium text-white truncate max-w-[100px]">
-                                    {user.displayName || "User"}
+                            <div className="relative">
+                                {user.photoURL ? (
+                                    <img
+                                        src={user.photoURL}
+                                        alt={user.displayName || "User"}
+                                        className="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm group-hover:scale-105 transition-transform"
+                                    />
+                                ) : (
+                                    <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                                        <span className="text-sm font-black text-white uppercase">
+                                            {user.displayName?.charAt(0) || "U"}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full group-hover:animate-pulse"></div>
+                            </div>
+                            <div className="hidden md:block text-left mr-2">
+                                <p className="text-xs font-black text-slate-900 truncate max-w-[100px] tracking-tight">
+                                    {user.displayName || "Professional"}
                                 </p>
-                                <p className="text-[10px] text-slate-500 capitalize">{user.plan || "Free"}</p>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none pt-1">{user.plan || "PRO"} SPEC</p>
                             </div>
                             <ChevronDown className={clsx(
-                                "w-4 h-4 text-slate-400 transition-transform",
+                                "w-4 h-4 text-slate-400 transition-transform group-hover:text-blue-600 mr-1",
                                 showProfileMenu && "rotate-180"
                             )} />
                         </button>
 
                         {/* Dropdown Menu */}
                         {showProfileMenu && (
-                            <div className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden z-50">
-                                <div className="p-3 border-b border-white/5">
-                                    <p className="text-sm font-medium text-white truncate">{user.displayName || "User"}</p>
-                                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                            <div className="absolute right-0 mt-4 w-72 rounded-[2rem] bg-white border border-slate-200 shadow-2xl overflow-hidden z-50 transform origin-top-right transition-all animate-in fade-in zoom-in duration-300">
+                                <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                                    <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user.displayName || "Professional"}</p>
+                                    <p className="text-[11px] text-slate-400 font-bold truncate mt-1 lowercase">{user.email}</p>
                                 </div>
-                                <div className="py-1">
+                                <div className="p-3 space-y-1">
                                     <button
                                         onClick={() => {
                                             router.push('/profile');
                                             setShowProfileMenu(false);
                                         }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
                                     >
-                                        <User className="w-4 h-4" />
-                                        View Profile
+                                        <div className="flex items-center gap-3">
+                                            <User className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
+                                            <span>Profile Matrix</span>
+                                        </div>
+                                        <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </button>
                                     <button
                                         onClick={() => {
                                             router.push('/profile');
                                             setShowProfileMenu(false);
                                         }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
                                     >
-                                        <Settings className="w-4 h-4" />
-                                        Settings
+                                        <div className="flex items-center gap-3">
+                                            <Settings className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
+                                            <span>Global Specs</span>
+                                        </div>
+                                        <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </button>
                                 </div>
-                                <div className="border-t border-white/5 py-1">
+                                <div className="p-3 bg-slate-50/80 border-t border-slate-100">
                                     <button
                                         onClick={handleSignOut}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                        className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
                                     >
-                                        <LogOut className="w-4 h-4" />
-                                        Sign Out
+                                        <LogOut className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
+                                        <span>Secure Exit</span>
                                     </button>
                                 </div>
                             </div>
@@ -156,5 +178,25 @@ export default function Header() {
                 )}
             </div>
         </header>
+    );
+}
+
+function ArrowRight(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+        </svg>
     );
 }

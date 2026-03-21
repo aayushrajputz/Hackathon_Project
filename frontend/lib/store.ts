@@ -37,25 +37,22 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     set({ isLoading: true });
 
-                    // Dynamically import Firebase
+                    // Real Firebase authentication flow
                     const { initializeFirebase } = await import('./firebase');
                     const { auth, provider } = await initializeFirebase();
 
                     if (!auth || !provider) {
-                        throw new Error('Firebase not initialized');
+                        throw new Error('Firebase subsystem not initialized. Check your environment configuration.');
                     }
 
                     const { signInWithPopup } = await import('firebase/auth');
                     const result = await signInWithPopup(auth, provider);
                     const firebaseUser = result.user;
 
-                    // Get ID token
+                    // Synchronize with backend
                     const idToken = await firebaseUser.getIdToken();
-
-                    // Store token
                     localStorage.setItem('authToken', idToken);
 
-                    // Send to backend
                     const response = await authApi.googleAuth(idToken);
                     const userData = response.data.data.user;
 

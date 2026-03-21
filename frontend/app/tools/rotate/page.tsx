@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
-import { api, shareApi } from '@/lib/api';
+import { api } from '@/lib/api';
 import clsx from 'clsx';
 import ShareModal from '@/components/ui/ShareModal';
 
@@ -107,11 +107,9 @@ export default function RotatePDFPage() {
     };
 
     return (
-        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans bg-slate-50 pb-12">
             {/* Background elements */}
-            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-40"></div>
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100 rounded-full blur-[120px] animate-pulse-slow"></div>
 
             <div className="relative z-10 max-w-5xl mx-auto">
                 {/* Header Section */}
@@ -121,14 +119,12 @@ export default function RotatePDFPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-6"
                     >
-                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-500 p-[1px] shadow-2xl shadow-orange-500/20">
-                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
-                                <RotateCw className="w-10 h-10 text-orange-400" />
-                            </div>
+                        <div className="w-20 h-20 rounded-3xl bg-blue-100 border border-blue-200 shadow-sm flex items-center justify-center">
+                            <RotateCw className="w-10 h-10 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-white tracking-tight">Rotate <span className="text-gradient-premium">PDF</span></h1>
-                            <p className="text-slate-400 font-medium mt-1">Adjust document orientation with precision</p>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Rotate <span className="text-blue-600">PDF</span></h1>
+                            <p className="text-slate-600 font-medium mt-1">Adjust document orientation with precision</p>
                         </div>
                     </motion.div>
 
@@ -137,7 +133,7 @@ export default function RotatePDFPage() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             onClick={handleClear}
-                            className="px-6 py-2.5 rounded-xl text-sm font-bold text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 border border-white/5 transition-all flex items-center gap-2"
+                            className="px-6 py-3 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 shadow-sm transition-all flex items-center gap-2 bg-white"
                         >
                             <X className="w-4 h-4" />
                             Clear Workspace
@@ -153,22 +149,19 @@ export default function RotatePDFPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="lg:col-span-7"
                         >
-                            <div className="glass-card-premium p-10 h-full flex flex-col items-center justify-center gap-10">
+                            <div className="bg-white border border-slate-200 shadow-sm rounded-[2.5rem] p-10 h-full flex flex-col items-center justify-center gap-10">
                                 {!file ? (
                                     <div
                                         {...getRootProps()}
-                                        className="dropzone-premium group w-full h-[400px] flex items-center justify-center border-dashed cursor-pointer"
+                                        className="group w-full h-[400px] flex items-center justify-center border-2 border-dashed border-slate-300 rounded-[2rem] bg-slate-50 hover:bg-blue-50/50 hover:border-blue-400 cursor-pointer transition-all"
                                     >
                                         <input {...getInputProps()} />
                                         <div className="flex flex-col items-center gap-6 text-center">
-                                            <div className="relative">
-                                                <div className="w-24 h-24 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                                    <Upload className="w-12 h-12 text-orange-400" />
-                                                </div>
-                                                <div className="absolute inset-0 rounded-full border border-orange-500/30 animate-ping opacity-20"></div>
+                                            <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                                <Upload className="w-12 h-12 text-blue-500" />
                                             </div>
                                             <div className="space-y-2">
-                                                <h3 className="text-2xl font-bold text-white tracking-tight">Select PDF File</h3>
+                                                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select PDF File</h3>
                                                 <p className="text-slate-500 font-medium">Drag & drop or click to upload</p>
                                             </div>
                                         </div>
@@ -180,21 +173,21 @@ export default function RotatePDFPage() {
                                             <motion.div
                                                 animate={{ rotate: angle }}
                                                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                                                className="w-48 h-64 bg-slate-900 border-2 border-orange-500/30 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden"
+                                                className="w-48 h-64 bg-white border-2 border-blue-200 rounded-[2rem] flex items-center justify-center shadow-md relative overflow-hidden"
                                             >
-                                                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent"></div>
-                                                <FileText className="w-20 h-20 text-orange-400 shadow-orange-500/20" />
+                                                <div className="absolute inset-0 bg-blue-50/50"></div>
+                                                <FileText className="w-20 h-20 text-blue-500 z-10" />
                                             </motion.div>
 
                                             {/* Angle Indicator */}
-                                            <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-slate-950 border border-orange-500/50 flex items-center justify-center text-orange-400 font-black text-sm shadow-2xl z-20">
+                                            <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-white font-black text-sm shadow-lg z-20">
                                                 {angle}°
                                             </div>
                                         </div>
 
-                                        <div className="text-center">
-                                            <p className="text-xl font-black text-white truncate max-w-[300px]">{file.name}</p>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-2">{formatBytes(file.size)}</p>
+                                        <div className="text-center px-4">
+                                            <p className="text-xl font-black text-slate-900 truncate max-w-[300px] mx-auto">{file.name}</p>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">{formatBytes(file.size)}</p>
                                         </div>
                                     </div>
                                 )}
@@ -207,13 +200,13 @@ export default function RotatePDFPage() {
                             animate={{ opacity: 1, x: 0 }}
                             className="lg:col-span-5 space-y-6"
                         >
-                            <div className="glass-card-premium p-8 space-y-10">
+                            <div className="bg-white border border-slate-200 shadow-sm rounded-[2.5rem] p-8 space-y-8 flex flex-col justify-center h-full">
                                 <div className="space-y-2">
-                                    <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                        <RotateCw className="w-5 h-5 text-orange-400" />
+                                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                        <RotateCw className="w-5 h-5 text-blue-600" />
                                         Rotation Parameters
                                     </h3>
-                                    <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Choose Orientation</p>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Choose Orientation</p>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4">
@@ -222,27 +215,24 @@ export default function RotatePDFPage() {
                                             key={opt.value}
                                             onClick={() => setAngle(opt.value)}
                                             className={clsx(
-                                                "group relative flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 overflow-hidden",
+                                                "group relative flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 overflow-hidden text-left",
                                                 angle === opt.value
-                                                    ? "bg-orange-500/10 border-orange-500/50 text-white"
-                                                    : "bg-white/5 border-white/5 text-slate-400 hover:border-orange-500/30 hover:bg-slate-800/50"
+                                                    ? "bg-blue-50 border-blue-200 text-slate-900 shadow-sm"
+                                                    : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-slate-50"
                                             )}
                                         >
-                                            {angle === opt.value && (
-                                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent"></div>
-                                            )}
                                             <div className={clsx(
-                                                "w-12 h-12 rounded-xl flex items-center justify-center transition-transform",
-                                                angle === opt.value ? "bg-orange-500 text-white" : "bg-slate-900 border border-white/10 group-hover:scale-110"
+                                                "w-12 h-12 rounded-xl flex items-center justify-center transition-transform shadow-sm",
+                                                angle === opt.value ? "bg-blue-600 text-white" : "bg-white border border-slate-200 group-hover:scale-110 group-hover:text-blue-500"
                                             )}>
                                                 <opt.icon className="w-6 h-6" />
                                             </div>
-                                            <div className="flex-1 text-left relative z-10">
-                                                <p className="font-bold text-sm tracking-tight">{opt.label}</p>
-                                                <p className="text-[10px] font-black opacity-50 uppercase tracking-widest mt-0.5">Application: Global</p>
+                                            <div className="flex-1 relative z-10">
+                                                <p className="font-bold text-sm tracking-tight text-slate-900">{opt.label}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Application: Global</p>
                                             </div>
                                             {angle === opt.value && (
-                                                <CheckCircle className="w-5 h-5 text-orange-400" />
+                                                <CheckCircle className="w-5 h-5 text-blue-600" />
                                             )}
                                         </button>
                                     ))}
@@ -252,8 +242,10 @@ export default function RotatePDFPage() {
                                     onClick={handleRotate}
                                     disabled={isProcessing || !file}
                                     className={clsx(
-                                        "w-full btn-premium py-5 group gap-3",
-                                        (isProcessing || !file) && "opacity-50 grayscale cursor-not-allowed"
+                                        "w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all",
+                                        (isProcessing || !file)
+                                            ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                            : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:opacity-90 group"
                                     )}
                                 >
                                     {isProcessing ? (
@@ -269,19 +261,20 @@ export default function RotatePDFPage() {
                                         </>
                                     )}
                                 </button>
+
+                                <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm border border-blue-100">
+                                        <Zap className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Instant Preview</h4>
+                                        <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
+                                            The document card on the left reflects your chosen angle in real-time before processing.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="glass-card-premium p-6 border-white/5 flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-1">
-                                    <Zap className="w-5 h-5 text-blue-400" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-tighter">Instant Preview</h4>
-                                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                                        The document card on the left reflects your chosen angle in real-time before processing.
-                                    </p>
-                                </div>
-                            </div>
                         </motion.div>
                     </div>
                 ) : (
@@ -291,55 +284,57 @@ export default function RotatePDFPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="max-w-2xl mx-auto"
                     >
-                        <div className="glass-card-premium p-12 text-center space-y-10 relative overflow-hidden text-white">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] -z-10"></div>
+                        <div className="bg-white border border-slate-200 shadow-xl rounded-[3rem] p-12 text-center space-y-10 relative overflow-hidden text-slate-900">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-50 rounded-full blur-[80px] -z-10"></div>
 
                             <div className="relative">
-                                <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-2xl animate-float">
-                                    <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-6 border border-emerald-100 shadow-inner animate-float">
+                                    <CheckCircle className="w-12 h-12 text-emerald-500" />
                                 </div>
                                 <h2 className="text-4xl font-black tracking-tight">Rotation Complete!</h2>
-                                <p className="text-slate-400 font-medium mt-2">Document persists with new orientation</p>
+                                <p className="text-slate-600 font-medium mt-3">Document persists with new orientation</p>
                             </div>
 
-                            <div className="bg-slate-900 border border-white/5 shadow-2xl rounded-3xl p-8 grid grid-cols-3 gap-6">
+                            <div className="bg-slate-50 border border-slate-100 shadow-sm rounded-[2rem] p-8 grid grid-cols-3 gap-6">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Angle</p>
-                                    <p className="text-xl font-black text-orange-400 text-center">{result.angle}°</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Angle</p>
+                                    <p className="text-xl font-black text-blue-600 text-center">{result.angle}°</p>
                                 </div>
                                 <div className="space-y-1 text-center">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Pages</p>
-                                    <p className="text-xl font-black text-white text-center">{result.pageCount}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Pages</p>
+                                    <p className="text-xl font-black text-slate-900 text-center">{result.pageCount}</p>
                                 </div>
                                 <div className="space-y-1 text-center">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Size</p>
-                                    <p className="text-xl font-black text-white text-center">{formatBytes(result.size || 0)}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Size</p>
+                                    <p className="text-xl font-black text-slate-900 text-center">{formatBytes(result.size || 0)}</p>
                                 </div>
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center gap-4">
                                 <button
                                     onClick={handleDownload}
-                                    className="w-full btn-premium py-5 flex items-center justify-center gap-3"
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-md shadow-blue-500/20"
                                 >
                                     <Download className="w-6 h-6" />
                                     <span>Download Rotated</span>
                                 </button>
                                 <button
                                     onClick={() => setShareModalOpen(true)}
-                                    className="w-full btn-glass py-5 border-white/10 hover:border-cyan-500/50 flex items-center justify-center gap-3"
+                                    className="w-full py-4 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-sm"
                                 >
-                                    <Share2 className="w-5 h-5 text-cyan-400" />
+                                    <Share2 className="w-5 h-5 text-blue-500" />
                                     <span>Secure Share</span>
                                 </button>
                             </div>
 
-                            <button
-                                onClick={handleClear}
-                                className="text-sm font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest"
-                            >
-                                Rotate New Document
-                            </button>
+                            <div className="pt-4 border-t border-slate-100">
+                                <button
+                                    onClick={handleClear}
+                                    className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
+                                >
+                                    Rotate New Document
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 )}

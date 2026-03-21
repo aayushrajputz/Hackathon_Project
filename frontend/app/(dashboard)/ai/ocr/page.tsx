@@ -1,27 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ScanText, Loader2, Copy, CheckCircle, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ScanText, Loader2, Copy, CheckCircle, FileText, Upload, X, ArrowRight, Zap, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import PDFDropzone from '@/components/pdf/PDFDropzone';
+import { useDropzone } from 'react-dropzone';
 import { aiApi } from '@/lib/api';
 import clsx from 'clsx';
 
 export default function OCRExtractPage() {
-    const [files, setFiles] = useState<File[]>([]);
+    const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [copied, setCopied] = useState(false);
 
+    const onDrop = (acceptedFiles: File[]) => {
+        if (acceptedFiles.length > 0) {
+            setFile(acceptedFiles[0]);
+            setResult(null);
+        }
+    };
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        accept: { 'application/pdf': ['.pdf'] },
+        multiple: false,
+    });
+
     const handleOCR = async () => {
-        if (files.length === 0) {
+        if (!file) {
             toast.error('Please upload a PDF file');
             return;
         }
 
-        // Validate file size (max 10MB)
-        if (files[0].size > 10 * 1024 * 1024) {
+        if (file.size > 10 * 1024 * 1024) {
             toast.error('File too large. Maximum size is 10MB.');
             return;
         }
@@ -30,19 +42,11 @@ export default function OCRExtractPage() {
         setResult(null);
 
         try {
-            const response = await aiApi.ocr(files[0]);
+            const response = await aiApi.ocr(file);
             setResult(response.data.data);
             toast.success('Text extracted successfully!');
         } catch (error: any) {
-            if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-                toast.error('Request timed out. Please try with a smaller document.');
-            } else if (error.response?.status === 503) {
-                toast.error('OCR service is not available.');
-            } else if (error.response?.status === 429) {
-                toast.error('Too many requests. Please wait a moment and try again.');
-            } else {
-                toast.error(error.response?.data?.error?.message || 'Failed to extract text. Please try again.');
-            }
+            toast.error(error.response?.data?.error?.message || 'Failed to extract text');
         } finally {
             setIsProcessing(false);
         }
@@ -58,16 +62,13 @@ export default function OCRExtractPage() {
     };
 
     const handleReset = () => {
-        setFiles([]);
+        setFile(null);
         setResult(null);
     };
 
     return (
-        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-40"></div>
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans bg-slate-50 pb-12">
+            <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-100 rounded-full blur-[120px] animate-pulse-slow"></div>
 
             <div className="relative z-10 max-w-5xl mx-auto">
                 {/* Header Section */}
@@ -77,146 +78,185 @@ export default function OCRExtractPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-6"
                     >
-                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 via-cyan-500 to-teal-500 p-[1px] shadow-2xl shadow-emerald-500/20">
-                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
-                                <ScanText className="w-10 h-10 text-emerald-400" />
-                            </div>
+                        <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-200 shadow-sm flex items-center justify-center">
+                            <ScanText className="w-10 h-10 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-white tracking-tight">OCR <span className="text-gradient-premium">Extract</span></h1>
-                            <p className="text-slate-400 font-medium mt-1">AI-powered text recognition for scanned PDFs</p>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">OCR <span className="text-blue-600">Scanner</span></h1>
+                            <p className="text-slate-600 font-medium mt-1">AI-powered neural text recognition</p>
                         </div>
                     </motion.div>
 
-                    {result && (
+                    {file && !result && (
                         <motion.button
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             onClick={handleReset}
-                            className="btn-glass text-white"
+                            className="px-6 py-3 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-all flex items-center gap-2 bg-white shadow-sm"
                         >
-                            Process Another
+                            <X className="w-4 h-4" />
+                            Discard
                         </motion.button>
                     )}
                 </div>
 
                 {!result ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-8"
-                    >
-                        <div className="glass-card-premium p-8">
-                            <div className="space-y-6">
-                                <PDFDropzone
-                                    files={files}
-                                    onFilesChange={setFiles}
-                                    multiple={false}
-                                    maxFiles={1}
-                                    disabled={isProcessing}
-                                />
+                    <div className="grid lg:grid-cols-12 gap-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="lg:col-span-8"
+                        >
+                            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 space-y-8">
+                                <div
+                                    {...getRootProps()}
+                                    className={clsx(
+                                        "h-[400px] flex items-center justify-center border-2 border-dashed rounded-[2rem] transition-all cursor-pointer",
+                                        file ? "bg-slate-50 border-blue-400" : "bg-white border-slate-300 hover:border-blue-500 hover:bg-blue-50/50"
+                                    )}
+                                >
+                                    <input {...getInputProps()} />
+                                    {!file ? (
+                                        <div className="flex flex-col items-center gap-6 text-center">
+                                            <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center shadow-inner">
+                                                <Upload className="w-10 h-10 text-blue-500" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select Scanned Document</h3>
+                                                <p className="text-slate-500 font-medium text-sm">PNG, JPG or PDF up to 10MB</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-6 text-center">
+                                            <div className="w-24 h-32 bg-white border border-slate-200 rounded-2xl shadow-md flex items-center justify-center relative overflow-hidden">
+                                                <div className="absolute inset-x-0 top-0 h-1/2 bg-blue-100/30"></div>
+                                                <FileText className="w-12 h-12 text-blue-600" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-lg font-black text-slate-900">{file.name}</p>
+                                                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">File Loaded</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
 
-                                {files.length > 0 && (
-                                    <div className="pt-4">
-                                        <button
-                                            onClick={handleOCR}
-                                            disabled={isProcessing}
-                                            className={clsx(
-                                                "w-full btn-premium shadow-xl",
-                                                isProcessing && "opacity-50 cursor-not-allowed"
-                                            )}
-                                        >
-                                            {isProcessing ? (
-                                                <div className="flex items-center gap-3">
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                                    <span>Digitizing Document...</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-3">
-                                                    <ScanText className="w-5 h-5" />
-                                                    <span>Start OCR Recognition</span>
-                                                </div>
-                                            )}
-                                        </button>
-                                    </div>
+                                {file && (
+                                    <button
+                                        onClick={handleOCR}
+                                        disabled={isProcessing}
+                                        className="w-full py-5 rounded-2xl bg-blue-600 text-white font-black text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 group"
+                                    >
+                                        {isProcessing ? (
+                                            <>
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                                <span>Running Intelligence...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ScanText className="w-6 h-6" />
+                                                <span>Extract Text Layer</span>
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </>
+                                        )}
+                                    </button>
                                 )}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Pro Features Grid */}
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {[
-                                { title: 'High Accuracy', desc: 'State-of-the-art neural networks for character recognition.' },
-                                { title: 'Multi-Language', desc: 'Support for over 50 languages including complex scripts.' },
-                                { title: 'No Data Storage', desc: 'Files are processed in memory and never stored on disk.' }
-                            ].map((feature, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 + i * 0.1 }}
-                                    className="p-6 rounded-3xl bg-white/5 border border-white/5"
-                                >
-                                    <h3 className="font-bold text-white mb-2">{feature.title}</h3>
-                                    <p className="text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="lg:col-span-4 space-y-6"
+                        >
+                            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 space-y-8 shadow-sm">
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                        <Zap className="w-5 h-5 text-blue-600" />
+                                        Advanced Labs
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                                        Our neural engine performs pixel-level analysis to handle complex layouts and rotations.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <Target className="w-4 h-4 text-blue-600" />
+                                            <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Precision</p>
+                                        </div>
+                                        <p className="text-xs text-blue-700 font-bold">99.2% Accuracy on printed text</p>
+                                    </div>
+                                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Privacy</p>
+                                        <p className="text-xs text-slate-600 font-medium">Documents are analyzed in isolation and discarded immediately.</p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 border-t border-slate-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center border border-slate-700">
+                                            <CheckCircle className="w-6 h-6 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-900 tracking-widest">NEURAL READY</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">System Status: Active</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
                 ) : (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-8"
+                        className="space-y-8 max-w-4xl mx-auto"
                     >
-                        <div className="glass-card-premium p-8">
-                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+                        <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl overflow-hidden relative">
+                            <div className="p-10 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                                        <FileText className="w-6 h-6 text-emerald-400" />
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                        <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white">Extracted Metadata</h3>
-                                        <p className="text-sm text-slate-400">
-                                            {result.totalPages || 1} page(s) analyzed • {result.method || 'Neural Engine'}
-                                        </p>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Scan Complete</h2>
+                                        <p className="text-sm font-bold text-slate-500">{result.wordCount || 0} Words Identified</p>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={handleCopy}
-                                    className="btn-premium px-6 py-2.5 !rounded-xl text-sm"
-                                >
-                                    {copied ? (
-                                        <><CheckCircle className="w-4 h-4" /> Copied</>
-                                    ) : (
-                                        <><Copy className="w-4 h-4" /> Copy Text</>
-                                    )}
-                                </button>
-                            </div>
-
-                            <div className="relative group">
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80 pointer-events-none rounded-2xl z-10"></div>
-                                <div className="bg-slate-950/50 backdrop-blur-sm rounded-2xl p-8 border border-white/5 min-h-[400px] max-h-[600px] overflow-y-auto custom-scrollbar">
-                                    <pre className="whitespace-pre-wrap text-emerald-50/90 font-mono text-sm leading-relaxed tracking-tight">
-                                        {result.text || 'No text detected in the provided document.'}
-                                    </pre>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleCopy}
+                                        className={clsx(
+                                            "px-8 py-3.5 rounded-2xl font-black text-sm flex items-center gap-3 transition-all",
+                                            copied ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/10"
+                                        )}
+                                    >
+                                        {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                                        {copied ? 'Copied' : 'Copy All Text'}
+                                    </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex justify-center gap-4">
-                            <button
-                                onClick={handleReset}
-                                className="px-8 py-4 text-slate-400 hover:text-white font-bold transition-all"
-                            >
-                                Clear Results
-                            </button>
-                            <button
-                                onClick={handleOCR}
-                                className="btn-glass text-white"
-                            >
-                                Reprocess Document
-                            </button>
+                            <div className="p-10 bg-white">
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/80 pointer-events-none rounded-3xl z-10 transition-opacity group-hover:opacity-0"></div>
+                                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-10 min-h-[500px] max-h-[700px] overflow-y-auto custom-scrollbar shadow-inner text-slate-900">
+                                        <pre className="whitespace-pre-wrap font-mono text-sm leading-[1.8] tracking-tight selection:bg-blue-200 selection:text-blue-900">
+                                            {result.text || 'No significant text found in document processing.'}
+                                        </pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 border-t border-slate-100 flex justify-center bg-slate-50/30">
+                                <button
+                                    onClick={handleReset}
+                                    className="px-10 py-4 text-xs font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em]"
+                                >
+                                    Process New Image or PDF
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 )}

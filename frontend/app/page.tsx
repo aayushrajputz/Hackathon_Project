@@ -1,9 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/lib/store';
-
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
     FileText,
@@ -17,292 +15,291 @@ import {
     Sparkles,
     ArrowRight,
     Zap,
-    Play,
     Star,
     Users,
     Globe,
-    CheckCircle,
     Award,
-    Type
+    Type,
+    CheckCircle2,
+    Cloud,
+    ShieldCheck,
+    Cpu
 } from 'lucide-react';
+import clsx from 'clsx';
 
 const tools = [
-    { name: 'Merge PDF', icon: Merge, color: 'from-blue-500 to-indigo-600', href: '/tools/merge' },
-    { name: 'Split PDF', icon: Scissors, color: 'from-purple-500 to-pink-600', href: '/tools/split' },
-    { name: 'Compress', icon: Minimize2, color: 'from-emerald-500 to-teal-600', href: '/tools/compress' },
-    { name: 'Rotate', icon: RotateCw, color: 'from-orange-500 to-amber-600', href: '/tools/rotate' },
-    { name: 'Draw Text', icon: Type, color: 'from-indigo-500 to-purple-600', href: '/tools/draw-text' },
-    { name: 'Add Badge', icon: Award, color: 'from-yellow-400 to-orange-500', href: '/tools/add-badge' },
-    { name: 'OCR Extract', icon: FileSearch, color: 'from-pink-500 to-rose-600', href: '/ai/ocr' },
-    { name: 'AI Summary', icon: Brain, color: 'from-cyan-500 to-blue-600', href: '/ai/summarize' },
+    { name: 'Merge PDF', icon: Merge, href: '/tools/merge' },
+    { name: 'Split PDF', icon: Scissors, href: '/tools/split' },
+    { name: 'Compress', icon: Minimize2, href: '/tools/compress' },
+    { name: 'Rotate', icon: RotateCw, href: '/tools/rotate' },
+    { name: 'Draw Text', icon: Type, href: '/tools/draw-text' },
+    { name: 'Add Badge', icon: Award, href: '/tools/add-badge' },
+    { name: 'OCR Extract', icon: FileSearch, href: '/ai/ocr' },
+    { name: 'AI Summary', icon: Brain, href: '/ai/summarize' },
 ];
 
 const features = [
     {
         icon: Zap,
-        title: 'Lightning Fast',
-        description: 'Process your PDFs in seconds with our Go-powered backend',
-        gradient: 'from-yellow-400 to-orange-500',
+        title: 'Neural Velocity',
+        description: 'Process PDFs with sub-second latency via our hyper-optimized Go engine.',
     },
     {
-        icon: Shield,
-        title: 'Bank-Grade Security',
-        description: 'Your files are encrypted and auto-deleted after processing',
-        gradient: 'from-green-400 to-emerald-600',
+        icon: ShieldCheck,
+        title: 'Zero-Trust Security',
+        description: 'End-to-end encryption with immediate volatile memory purging on completion.',
     },
     {
         icon: Brain,
-        title: 'AI-Powered Magic',
-        description: 'Extract text, summarize content, detect sensitive data instantly',
-        gradient: 'from-purple-500 to-pink-600',
+        title: 'Cognitive AI',
+        description: 'Deep semantic analysis for summaries, metadata, and intelligent OCR.',
     },
     {
         icon: Sparkles,
-        title: 'Premium Output',
-        description: 'Watermarks, badges, custom text - make PDFs truly yours',
-        gradient: 'from-cyan-400 to-blue-600',
+        title: 'Professional Identity',
+        description: 'Apply high-fidelity watermarks, official badges, and custom annotations.',
     },
 ];
 
 const stats = [
-    { value: '10M+', label: 'PDFs Processed', icon: FileText },
-    { value: '500K+', label: 'Happy Users', icon: Users },
-    { value: '99.9%', label: 'Uptime', icon: Globe },
-    { value: '4.9', label: 'User Rating', icon: Star },
+    { value: '25M+', label: 'Successful Operations', icon: Cpu },
+    { value: '800K+', label: 'Platform Users', icon: Users },
+    { value: '99.99%', label: 'Infrastructure Uptime', icon: Globe },
+    { value: '4.95', label: 'Customer Trust', icon: Star },
 ];
 
 export default function HomePage() {
     const { isAuthenticated } = useAuthStore();
+
     return (
-        <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
-            {/* Animated Background */}
-            <div className="fixed inset-0 z-0">
-                <Image
-                    src="/images/hero-bg.png"
-                    alt="Background"
-                    fill
-                    className="object-cover opacity-60"
-                    priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-transparent to-slate-950"></div>
-                {/* Animated Orbs */}
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-100/40 rounded-full blur-[160px] animate-pulse-slow"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-50/60 rounded-full blur-[140px] animate-pulse-slow delay-700"></div>
             </div>
 
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/50 border-b border-white/5">
-                <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                            <FileText className="w-6 h-6 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            BinaryPDF
-                        </span>
-                    </Link>
-
-                    <nav className="hidden md:flex items-center gap-8">
-                        <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors font-medium">
-                            Pricing
+            {/* Premium Navigation */}
+            <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+                <nav className="container mx-auto px-6 py-5">
+                    <div className="bg-white/70 backdrop-blur-2xl border border-white/40 shadow-xl shadow-blue-500/5 rounded-[2.5rem] px-8 py-4 flex items-center justify-between">
+                        <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-3.5 group">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
+                                <FileText className="w-7 h-7 text-white" />
+                            </div>
+                            <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                                Binary<span className="text-blue-600">PDF</span>
+                            </span>
                         </Link>
-                        {isAuthenticated ? (
-                            <>
-                                <Link href="/tools" className="text-gray-300 hover:text-white transition-colors font-medium">
-                                    Tools
+
+                        <div className="hidden lg:flex items-center gap-10">
+                            {['Tools', 'AI Features', 'Pricing', 'Documentation'].map((item) => (
+                                <Link
+                                    key={item}
+                                    href={`/${item.toLowerCase().replace(' ', '-')}`}
+                                    className="text-sm font-black text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-[0.15em]"
+                                >
+                                    {item}
                                 </Link>
-                                <Link href="/ai/chat" className="text-gray-300 hover:text-white transition-colors font-medium">
-                                    AI Features
-                                </Link>
-                                <Link href="/dashboard" className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10">
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            {isAuthenticated ? (
+                                <Link href="/dashboard" className="px-8 py-3.5 rounded-2xl bg-blue-600 text-white font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5">
                                     Dashboard
                                 </Link>
-                            </>
-                        ) : (
-                            <Link href="/login" className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 transition-all font-semibold shadow-lg shadow-purple-500/25">
-                                Get Started
-                            </Link>
-                        )}
-                    </nav>
-                </div>
+                            ) : (
+                                <>
+                                    <Link href="/login" className="hidden sm:block text-sm font-black text-slate-900 uppercase tracking-widest px-6">
+                                        Login
+                                    </Link>
+                                    <Link href="/login" className="px-8 py-3.5 rounded-2xl bg-blue-600 text-white font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5">
+                                        Join Pro
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </nav>
             </header>
 
             {/* Hero Section */}
-            <section className="relative z-10 pt-40 pb-24 px-6">
-                <div className="container mx-auto text-center">
+            <section className="relative z-10 pt-48 pb-32 px-6">
+                <div className="container mx-auto text-center space-y-12">
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="space-y-8"
                     >
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            <span className="text-sm text-gray-300">Trusted by 500K+ professionals worldwide</span>
+                        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50 border border-blue-100 shadow-sm">
+                            <Cloud className="w-4 h-4 text-blue-600" />
+                            <span className="text-xs text-blue-800 font-black uppercase tracking-[0.2em]">Next-Gen PDF Infrastructure</span>
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
-                            <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-                                Transform PDFs
-                            </span>
-                            <br />
-                            <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                with AI Magic
-                            </span>
+                        <h1 className="text-5xl md:text-8xl lg:text-9xl font-black text-slate-900 leading-[0.95] tracking-tight">
+                            Elevate Your <br />
+                            <span className="text-blue-600">Documents</span>
                         </h1>
 
-                        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed">
-                            The most powerful PDF toolkit on the planet. Merge, split, compress,
-                            add custom text, badges, and unlock AI-powered insights — all in one place.
+                        <p className="text-lg md:text-2xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
+                            The professional document engine powered by neural intelligence.
+                            Merge, secure, and transform PDFs with atomic precision.
                         </p>
 
-                        <div className="flex flex-wrap gap-4 justify-center mb-16">
-                            <Link href="/login" className="group px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 transition-all font-semibold text-lg shadow-2xl shadow-purple-500/30 flex items-center gap-2">
-                                Get Started Free
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8">
+                            <Link href="/login" className="px-12 py-6 bg-blue-600 text-white font-black rounded-3xl text-lg uppercase tracking-widest hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1 flex items-center justify-center gap-4 group">
+                                Start Free Workspace
+                                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                             </Link>
-                            <Link href="/pricing" className="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors font-semibold text-lg border border-white/10 flex items-center gap-2">
-                                View Pricing
+                            <Link href="/pricing" className="px-12 py-6 bg-white text-slate-900 font-black rounded-3xl text-lg uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-all shadow-lg hover:-translate-y-1">
+                                Enterprise Plans
                             </Link>
                         </div>
+                    </motion.div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                            {stats.map((stat, index) => (
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-24">
+                        {stats.map((stat, index) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.5 + index * 0.1 }}
+                                className="p-10 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all group"
+                            >
+                                <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-6 group-hover:scale-110 transition-transform" />
+                                <div className="text-4xl font-black text-slate-900 mb-2 tracking-tight">{stat.value}</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{stat.label}</div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Tools Ecosystem */}
+            <section className="relative z-10 py-32 px-6 bg-white border-y border-slate-200 shadow-sm">
+                <div className="container mx-auto">
+                    <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8 text-center md:text-left">
+                        <div className="space-y-4">
+                            <div className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs">The Ecosystem</div>
+                            <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
+                                Precision <span className="text-blue-600">Engineered</span>
+                            </h2>
+                        </div>
+                        <p className="text-slate-500 font-bold max-w-md text-lg leading-relaxed">
+                            A complete suite of atomic PDF modules designed for professional workflows and high-volume operations.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {tools.map((tool, index) => (
+                            <motion.div
+                                key={tool.name}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <Link href="/login" className="group block p-10 rounded-[3rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-500 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                    <div className="w-20 h-20 rounded-[1.5rem] bg-white flex items-center justify-center mb-10 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-slate-100">
+                                        <tool.icon className="w-10 h-10 text-blue-600" />
+                                    </div>
+                                    <h3 className="font-black text-2xl text-slate-900 mb-2 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
+                                        {tool.name}
+                                    </h3>
+                                    <div className="flex items-center gap-2 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                        Active Module
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* AI Capability Section */}
+            <section className="relative z-10 py-32 px-6 overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,#dbeafe_0%,transparent_70%)] opacity-30"></div>
+
+                <div className="container mx-auto">
+                    <div className="grid lg:grid-cols-12 gap-16 items-center">
+                        <div className="lg:col-span-12 grid md:grid-cols-4 gap-8">
+                            {features.map((feature, index) => (
                                 <motion.div
-                                    key={stat.label}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                                    className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
+                                    key={feature.title}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="p-10 rounded-[3rem] bg-white border border-slate-200 hover:border-blue-300 transition-all shadow-sm"
                                 >
-                                    <stat.icon className="w-5 h-5 text-cyan-400 mx-auto mb-2" />
-                                    <div className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">{stat.value}</div>
-                                    <div className="text-sm text-gray-500">{stat.label}</div>
+                                    <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mb-8 shadow-xl shadow-blue-500/20 text-white">
+                                        <feature.icon className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-black mb-4 text-slate-900 tracking-tight uppercase">{feature.title}</h3>
+                                    <p className="text-slate-500 font-bold leading-relaxed">{feature.description}</p>
                                 </motion.div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* High Impact CTA */}
+            <section className="relative z-10 py-32 px-6">
+                <div className="container mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        className="relative rounded-[4rem] overflow-hidden bg-slate-900 p-16 md:p-24 text-center shadow-2xl"
+                    >
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600 rounded-full blur-[160px] opacity-20"></div>
+                        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500 rounded-full blur-[140px] opacity-10"></div>
+
+                        <div className="relative z-10 max-w-3xl mx-auto space-y-10">
+                            <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tight">
+                                Ready for <br />
+                                Professional <span className="text-blue-600">Flow</span>?
+                            </h2>
+                            <p className="text-slate-400 text-xl font-medium leading-relaxed">
+                                Join 800,000+ engineers and professionals automating their document destiny.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
+                                <Link href="/login" className="px-12 py-5 bg-blue-600 text-white font-black rounded-2xl text-lg uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-1">
+                                    Deploy Free Instance
+                                </Link>
+                                <Link href="/pricing" className="px-12 py-5 bg-slate-800 text-white font-black rounded-2xl text-lg uppercase tracking-widest border border-slate-700 hover:bg-slate-700 transition-all hover:-translate-y-1">
+                                    Enterprise Specs
+                                </Link>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Tools Grid */}
-            <section className="relative z-10 py-24 px-6">
-                <div className="container mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                            <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                                Powerful Tools at Your Fingertips
-                            </span>
-                        </h2>
-                        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                            From basic operations to AI-powered magic. No learning curve.
-                        </p>
-                    </div>
+            {/* Minimalist Footer */}
+            <footer className="relative z-10 py-16 px-6 border-t border-slate-100 bg-white">
+                <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-10">
+                    <Link href="/" className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center p-2 shadow-sm">
+                            <FileText className="w-full h-full text-white" />
+                        </div>
+                        <span className="text-xl font-black text-slate-900 tracking-tighter">BinaryPDF</span>
+                    </Link>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {tools.map((tool, index) => (
-                            <motion.div
-                                key={tool.name}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.4, delay: index * 0.05 }}
-                            >
-                                <Link href="/login" className="group block p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all hover:scale-105">
-                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                                        <tool.icon className="w-7 h-7 text-white" />
-                                    </div>
-                                    <span className="font-semibold text-white group-hover:text-cyan-400 transition-colors">
-                                        {tool.name}
-                                    </span>
-                                </Link>
-                            </motion.div>
+                    <div className="flex gap-12">
+                        {['Security', 'Privacy', 'Status', 'API'].map((item) => (
+                            <Link key={item} href="/" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
+                                {item}
+                            </Link>
                         ))}
                     </div>
 
-                    <div className="text-center mt-10">
-                        <Link href="/login" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-medium text-lg">
-                            Sign In to Access All Tools
-                            <ArrowRight className="w-5 h-5" />
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Section */}
-            <section className="relative z-10 py-24 px-6">
-                <div className="container mx-auto">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {features.map((feature, index) => (
-                            <motion.div
-                                key={feature.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                                className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-                            >
-                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
-                                    <feature.icon className="w-7 h-7 text-white" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
-                                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="relative z-10 py-24 px-6">
-                <div className="container mx-auto">
-                    <div className="relative rounded-3xl overflow-hidden">
-                        {/* Gradient Background */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-600 via-purple-600 to-pink-600"></div>
-                        <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] opacity-20 mix-blend-overlay"></div>
-
-                        <div className="relative p-12 md:p-20 text-center">
-                            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                                Ready to Transform Your PDFs?
-                            </h2>
-                            <p className="text-white/80 text-xl max-w-2xl mx-auto mb-10">
-                                Join 500K+ professionals who trust BinaryPDF. Start free — no credit card required.
-                            </p>
-                            <div className="flex flex-wrap gap-4 justify-center">
-                                <Link href="/login" className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-100 transition-colors text-lg shadow-xl flex items-center gap-2">
-                                    Get Started Free
-                                    <ArrowRight className="w-5 h-5" />
-                                </Link>
-                                <Link href="/pricing" className="px-8 py-4 bg-white/10 text-white font-semibold rounded-xl hover:bg-white/20 transition-colors text-lg border border-white/20">
-                                    View Pricing
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="relative z-10 py-16 px-6 border-t border-white/10">
-                <div className="container mx-auto">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                                BinaryPDF
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-6 text-gray-400 text-sm">
-                            <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-                            <Link href="/login" className="hover:text-white transition-colors">Login</Link>
-                        </div>
-                        <p className="text-gray-500 text-sm">
-                            © 2025 BinaryPDF. Crafted with ❤️ by Aayush
-                        </p>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        &copy; 2025 ALL RIGHTS RESERVED
                     </div>
                 </div>
             </footer>

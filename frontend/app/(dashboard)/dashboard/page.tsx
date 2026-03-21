@@ -28,76 +28,60 @@ import {
     Sparkles,
     Zap,
     Grid,
-    LayoutDashboard
+    LayoutDashboard,
+    ArrowUpRight,
+    HardDrive
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const quickTools = [
-    { name: 'Merge PDFs', icon: Merge, href: '/tools/merge', color: 'bg-blue-500' },
-    { name: 'Split PDF', icon: Scissors, href: '/tools/split', color: 'bg-purple-500' },
-    { name: 'Compress', icon: Minimize2, href: '/tools/compress', color: 'bg-emerald-500' },
-    { name: 'OCR Extract', icon: FileSearch, href: '/ai/ocr', color: 'bg-amber-500' },
-    { name: 'AI Summary', icon: Brain, href: '/ai/summarize', color: 'bg-indigo-500' },
-    { name: 'Rotate Pages', icon: RotateCw, href: '/tools/rotate', color: 'bg-orange-500' },
+    { name: 'Merge PDFs', icon: Merge, href: '/tools/merge' },
+    { name: 'Split PDF', icon: Scissors, href: '/tools/split' },
+    { name: 'Compress', icon: Minimize2, href: '/tools/compress' },
+    { name: 'OCR Extract', icon: FileSearch, href: '/ai/ocr' },
+    { name: 'AI Summary', icon: Brain, href: '/ai/summarize' },
+    { name: 'Rotate PDF', icon: RotateCw, href: '/tools/rotate' },
 ];
 
-const allTools = [
+const coreTools = [
     {
         name: 'Merge',
         href: '/tools/merge',
         icon: Merge,
-        description: 'Combine multiple PDFs into one',
-        color: 'from-blue-500/20 to-blue-600/20',
-        borderColor: 'border-blue-500/30',
-        glow: 'shadow-blue-500/10'
+        description: 'Combine multiple document layers',
     },
     {
         name: 'Split',
         href: '/tools/split',
         icon: Scissors,
-        description: 'Divide PDF by choosing page ranges',
-        color: 'from-purple-500/20 to-purple-600/20',
-        borderColor: 'border-purple-500/30',
-        glow: 'shadow-purple-500/10'
+        description: 'Divide by page ranges',
     },
     {
         name: 'Compress',
         href: '/tools/compress',
         icon: Minimize2,
-        description: 'Reduce size while keeping quality',
-        color: 'from-emerald-500/20 to-emerald-600/20',
-        borderColor: 'border-emerald-500/30',
-        glow: 'shadow-emerald-500/10'
+        description: 'Optimize for speed and size',
     },
     {
         name: 'Organize',
         href: '/tools/organize',
         icon: Layers,
-        description: 'Reorder or delete document pages',
-        color: 'from-cyan-500/20 to-cyan-600/20',
-        borderColor: 'border-cyan-500/30',
-        glow: 'shadow-cyan-500/10'
+        description: 'Rearrange page hierarchy',
     },
 ];
 
-const aiTools = [
+const aiIntelligence = [
     {
         name: 'OCR Scanner',
         href: '/ai/ocr',
         icon: FileSearch,
-        description: 'Extract text from any scanned PDF',
-        color: 'from-amber-500/20 to-orange-600/20',
-        borderColor: 'border-amber-500/30',
-        glow: 'shadow-amber-500/10'
+        description: 'Optical text & data extraction',
     },
     {
-        name: 'AI Intelligence',
+        name: 'AI Summarizer',
         href: '/ai/summarize',
         icon: Brain,
-        description: 'Summarize long documents instantly',
-        color: 'from-indigo-500/20 to-blue-600/20',
-        borderColor: 'border-indigo-500/30',
-        glow: 'shadow-indigo-500/10'
+        description: 'Deep semantic document analysis',
     },
 ];
 
@@ -125,11 +109,13 @@ export default function DashboardPage() {
         visible: { opacity: 1, y: 0 }
     };
 
+    const storageUsage = user ? (user.storageUsed || 0) / (user.storageLimit || 10 * 1024 * 1024) : 0;
+    const storagePercent = Math.min(100, Math.round(storageUsage * 100));
+
     return (
-        <div className="relative min-h-screen pb-20">
-            {/* Background Decorations */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[120px] -z-10 animate-pulse-slow delay-1000"></div>
+        <div className="relative min-h-screen pb-20 bg-slate-50 font-sans">
+            {/* Background elements */}
+            <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
 
             <motion.div
                 variants={containerVariants}
@@ -137,169 +123,194 @@ export default function DashboardPage() {
                 animate="visible"
                 className="space-y-12"
             >
-                {/* Hero / Welcome Section */}
-                <section className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-white/5 p-8 md:p-12">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-500/10 to-transparent blur-3xl"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="space-y-4 text-center md:text-left">
-                            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-cyan-400 text-xs font-bold uppercase tracking-wider">
-                                <Zap className="w-3 h-3" />
-                                Systems Operational
+                {/* Premium Hero Section */}
+                <section className="relative overflow-hidden rounded-[3rem] bg-white border border-slate-200 p-8 md:p-14 shadow-sm group">
+                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-blue-50 to-transparent blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-1000"></div>
+
+                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                        <div className="space-y-6 text-center lg:text-left">
+                            <motion.div
+                                variants={itemVariants}
+                                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm"
+                            >
+                                <Zap className="w-3.5 h-3.5" />
+                                Ready for Production
                             </motion.div>
-                            <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black text-white leading-tight">
-                                Welcome back, <br />
-                                <span className="text-gradient-premium">{user?.displayName?.split(' ')[0] || 'Explorer'}</span>
+                            <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                                Hello, <br />
+                                <span className="text-blue-600">{user?.displayName?.split(' ')[0] || 'User'}</span>
                             </motion.h1>
-                            <motion.p variants={itemVariants} className="text-slate-400 font-medium max-w-md">
-                                Your digital workspace is optimized and ready. What premium operation would you like to perform?
+                            <motion.p variants={itemVariants} className="text-slate-500 text-lg font-medium max-w-md leading-relaxed">
+                                Professional dashboard initialized. Your operations are secured and your workspace is optimized.
                             </motion.p>
                         </div>
 
                         <motion.div
                             variants={itemVariants}
-                            className="w-full md:w-auto grid grid-cols-2 gap-4"
+                            className="w-full lg:w-96 space-y-4"
                         >
-                            <div className="glass-card p-6 border-white/10 text-center space-y-2">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Plan</p>
-                                <p className="text-xl font-black text-white capitalize">{user?.plan || 'Free'}</p>
-                            </div>
-                            <div className="glass-card p-6 border-white/10 text-center space-y-2">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Storage Status</p>
-                                <p className="text-xl font-black text-cyan-400">
-                                    {Math.round((user?.storageUsed || 0) / (user?.storageLimit || 1) * 100)}%
-                                </p>
+                            <div className="bg-slate-50/80 backdrop-blur-sm p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <HardDrive className="w-4 h-4 text-slate-400" />
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Storage Efficiency</span>
+                                        </div>
+                                        <span className={clsx(
+                                            "text-xs font-black",
+                                            storagePercent > 90 ? "text-rose-600" : "text-blue-600"
+                                        )}>{storagePercent}%</span>
+                                    </div>
+                                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden shadow-inner p-0.5">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${storagePercent}%` }}
+                                            className={clsx(
+                                                "h-full rounded-full shadow-sm",
+                                                storagePercent > 90 ? "bg-rose-500" : "bg-blue-600"
+                                            )}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-tighter">
+                                        {formatBytes(user?.storageUsed || 0)} OF {formatBytes(user?.storageLimit || 10485760)}
+                                    </p>
+                                </div>
+
+                                <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status</p>
+                                        <p className="text-xs font-black text-slate-900 uppercase">Verified {user?.plan || 'Free'}</p>
+                                    </div>
+                                    <Link
+                                        href="/plans"
+                                        className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-blue-500 transition-all shadow-sm"
+                                    >
+                                        <ArrowUpRight className="w-5 h-5 text-blue-600" />
+                                    </Link>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
                 </section>
 
-                {/* Quick Launch Panel */}
-                <section className="space-y-6">
-                    <div className="flex items-center justify-between">
+                {/* Quick Actions Panel */}
+                <section className="space-y-8">
+                    <div className="flex items-center justify-between px-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                                <Clock className="w-5 h-5 text-cyan-400" />
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200 shadow-sm">
+                                <Clock className="w-5 h-5 text-blue-600" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Quick Launch</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quick Operations</h2>
                         </div>
+                        <Link href="/tools" className="text-xs font-black text-blue-600 uppercase tracking-widest hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+                            Explore All <ArrowRight className="w-4 h-4" />
+                        </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
                         {quickTools.map((tool) => (
                             <motion.div key={tool.name} variants={itemVariants}>
                                 <Link
                                     href={tool.href}
-                                    className="group relative flex flex-col items-center gap-4 p-6 glass-card border-white/5 hover:border-white/10 transition-all duration-300 hover:-translate-y-1"
+                                    className="group relative flex flex-col items-center gap-5 p-8 bg-white rounded-[2.5rem] border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 hover:-translate-y-2 shadow-sm"
                                 >
-                                    <div className={clsx(
-                                        "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6",
-                                        tool.color,
-                                        "shadow-inner bg-opacity-10 border border-white/5"
-                                    )}>
-                                        <tool.icon className="w-7 h-7 text-white" />
+                                    <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner">
+                                        <tool.icon className="w-8 h-8" />
                                     </div>
-                                    <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{tool.name}</span>
+                                    <span className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-center leading-tight">
+                                        {tool.name}
+                                    </span>
                                 </Link>
                             </motion.div>
                         ))}
                     </div>
                 </section>
 
-                {/* Main Tools Grid */}
+                {/* Processing and AI Sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Core Processing */}
+                    {/* Document Engine */}
                     <section className="space-y-8">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                                <Grid className="w-5 h-5 text-purple-400" />
+                        <div className="flex items-center gap-3 px-2">
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200">
+                                <Grid className="w-5 h-5 text-blue-600" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Document Processing</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Document Engine</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {allTools.map((tool) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            {coreTools.map((tool) => (
                                 <motion.div key={tool.name} variants={itemVariants}>
                                     <Link
                                         href={tool.href}
-                                        className={clsx(
-                                            "block p-6 rounded-[2rem] bg-slate-900/50 border backdrop-blur-sm transition-all duration-500 group",
-                                            tool.borderColor,
-                                            "hover:bg-slate-900"
-                                        )}
+                                        className="block p-8 rounded-[2.5rem] bg-white border border-slate-200 transition-all duration-500 group hover:shadow-xl hover:-translate-y-2 shadow-sm hover:border-blue-300"
                                     >
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className={clsx(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center border bg-gradient-to-br transition-all duration-500 group-hover:scale-110",
-                                                tool.color,
-                                                tool.borderColor
-                                            )}>
-                                                <tool.icon className="w-6 h-6 text-white" />
+                                        <div className="flex items-start justify-between mb-8">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center border border-blue-100 bg-blue-50 transition-all duration-500 group-hover:scale-110 shadow-sm">
+                                                <tool.icon className="w-7 h-7 text-blue-600" />
                                             </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                            <div className="p-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                                <ArrowRight className="w-5 h-5 text-blue-500" />
+                                            </div>
                                         </div>
-                                        <h3 className="text-white font-bold text-lg mb-1">{tool.name}</h3>
-                                        <p className="text-slate-400 text-sm leading-relaxed">{tool.description}</p>
+                                        <h3 className="text-slate-900 font-black text-xl mb-2">{tool.name}</h3>
+                                        <p className="text-slate-500 text-sm leading-relaxed font-bold opacity-80 group-hover:opacity-100">{tool.description}</p>
                                     </Link>
                                 </motion.div>
                             ))}
                         </div>
                     </section>
 
-                    {/* AI & Intelligence */}
+                    {/* AI & Labs */}
                     <section className="space-y-8">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                <Sparkles className="w-5 h-5 text-emerald-400" />
+                        <div className="flex items-center gap-3 px-2">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center border border-blue-500 shadow-lg shadow-blue-500/20">
+                                <Sparkles className="w-5 h-5 text-white" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">AI Intelligence</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">AI & Labs</h2>
                         </div>
 
-                        <div className="space-y-4">
-                            {aiTools.map((tool) => (
+                        <div className="space-y-5">
+                            {aiIntelligence.map((tool) => (
                                 <motion.div key={tool.name} variants={itemVariants}>
                                     <Link
                                         href={tool.href}
-                                        className={clsx(
-                                            "flex items-center gap-6 p-6 rounded-[2rem] bg-slate-900/50 border border-white/5 backdrop-blur-sm transition-all duration-500 group hover:border-white/10 hover:bg-slate-900"
-                                        )}
+                                        className="flex items-center gap-8 p-8 rounded-[3rem] bg-white border border-slate-200 transition-all duration-500 group hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/10 shadow-sm"
                                     >
-                                        <div className={clsx(
-                                            "w-16 h-16 shrink-0 rounded-3xl flex items-center justify-center border bg-gradient-to-br transition-all duration-500 group-hover:scale-110",
-                                            tool.color,
-                                            tool.borderColor
-                                        )}>
-                                            <tool.icon className="w-8 h-8 text-white" />
+                                        <div className="w-20 h-20 shrink-0 rounded-[2rem] flex items-center justify-center bg-blue-50 border border-blue-100 transition-all duration-500 group-hover:scale-110 shadow-inner">
+                                            <tool.icon className="w-10 h-10 text-blue-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="text-white font-black text-xl mb-1">{tool.name}</h3>
-                                            <p className="text-slate-400 text-sm leading-relaxed">{tool.description}</p>
+                                            <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1.5 opacity-60">Neural Engine</div>
+                                            <h3 className="text-slate-900 font-black text-2xl mb-1">{tool.name}</h3>
+                                            <p className="text-slate-500 text-sm leading-relaxed font-bold">{tool.description}</p>
                                         </div>
-                                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                            <ArrowRight className="w-5 h-5 text-white" />
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                            <ArrowRight className="w-5 h-5" />
                                         </div>
                                     </Link>
                                 </motion.div>
                             ))}
-                        </div>
 
-                        {/* Upgrade CTA Card */}
-                        <motion.div
-                            variants={itemVariants}
-                            className="relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br from-cyan-500 to-purple-600 border border-white/20 group cursor-pointer"
-                        >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                            <div className="relative z-10 space-y-4">
-                                <h3 className="text-2xl font-black text-white">Unlock Full Power</h3>
-                                <p className="text-white/80 font-medium max-w-xs">Get unlimited AI extractions, larger file sizes, and premium cloud storage.</p>
-                                <Link
-                                    href="/plans"
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-950 text-sm font-bold shadow-xl hover:scale-105 transition-transform"
-                                >
-                                    Boost Your Plan
-                                    <Zap className="w-4 h-4 fill-current" />
-                                </Link>
-                            </div>
-                        </motion.div>
+                            <motion.div
+                                variants={itemVariants}
+                                className="relative overflow-hidden p-10 rounded-[3rem] bg-slate-900 border border-slate-800 shadow-2xl group cursor-pointer"
+                            >
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 opacity-10 rounded-full blur-[80px] group-hover:opacity-20 transition-all duration-1000"></div>
+                                <div className="relative z-10 space-y-6">
+                                    <div className="space-y-3">
+                                        <h3 className="text-3xl font-black text-white tracking-tight">Elevate Productivity</h3>
+                                        <p className="text-slate-400 font-medium max-w-xs text-lg">Access unlimited AI bandwidth and high-priority file processing.</p>
+                                    </div>
+                                    <Link
+                                        href="/plans"
+                                        className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-blue-600 text-white text-sm font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-1 transition-all"
+                                    >
+                                        Upgrade to Pro
+                                        <Zap className="w-4 h-4 fill-current" />
+                                    </Link>
+                                </div>
+                            </motion.div>
+                        </div>
                     </section>
                 </div>
             </motion.div>

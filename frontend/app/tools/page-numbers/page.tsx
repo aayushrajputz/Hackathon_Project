@@ -131,10 +131,8 @@ export default function PageNumbersPDFPage() {
     };
 
     return (
-        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans">
-            <div className="absolute inset-0 bg-mesh pointer-events-none opacity-20"></div>
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        <div className="relative min-h-[calc(100vh-4rem)] p-4 md:p-8 overflow-hidden font-sans bg-slate-50 pb-12">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100 rounded-full blur-[120px] animate-pulse-slow"></div>
 
             <div className="relative z-10 max-w-6xl mx-auto">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
@@ -143,14 +141,12 @@ export default function PageNumbersPDFPage() {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-6"
                     >
-                        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 p-[1px] shadow-2xl shadow-rose-500/20">
-                            <div className="w-full h-full rounded-[23px] bg-slate-950 flex items-center justify-center">
-                                <Hash className="w-10 h-10 text-rose-400" />
-                            </div>
+                        <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-200 shadow-sm flex items-center justify-center">
+                            <Hash className="w-10 h-10 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-white tracking-tight">Index <span className="text-gradient-premium">Pages</span></h1>
-                            <p className="text-slate-400 font-medium mt-1">Structure your documents with professional pagination</p>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Index <span className="text-blue-600">Pages</span></h1>
+                            <p className="text-slate-600 font-medium mt-1">Structure your documents with professional pagination</p>
                         </div>
                     </motion.div>
 
@@ -159,7 +155,7 @@ export default function PageNumbersPDFPage() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             onClick={handleClear}
-                            className="px-6 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-white/5 transition-all flex items-center gap-2"
+                            className="px-6 py-3 rounded-xl text-sm font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 shadow-sm transition-all flex items-center gap-2 bg-white"
                         >
                             <X className="w-4 h-4" />
                             Clear Workspace
@@ -174,22 +170,22 @@ export default function PageNumbersPDFPage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="lg:col-span-12"
                         >
-                            <div className="glass-card-premium overflow-hidden border-white/10 grid md:grid-cols-2">
-                                <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/5 bg-slate-900/40">
+                            <div className="bg-white border border-slate-200 shadow-sm rounded-[2.5rem] overflow-hidden grid md:grid-cols-2">
+                                <div className="p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50">
                                     {!file ? (
                                         <div
                                             {...getRootProps()}
-                                            className="dropzone-premium group h-full min-h-[400px] flex items-center justify-center border-dashed cursor-pointer"
+                                            className="group h-full min-h-[400px] flex items-center justify-center border-2 border-dashed border-slate-300 rounded-[2rem] bg-white hover:bg-blue-50/50 hover:border-blue-400 cursor-pointer transition-all"
                                         >
                                             <input {...getInputProps()} />
                                             <div className="flex flex-col items-center gap-6 text-center">
                                                 <div className="relative">
-                                                    <div className="w-24 h-24 rounded-full bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                                        <Upload className="w-10 h-10 text-rose-400" />
+                                                    <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 shadow-inner hover:shadow-md transition-all duration-500">
+                                                        <Upload className="w-10 h-10 text-blue-500" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <h3 className="text-2xl font-bold text-white tracking-tight">Select PDF for Indexing</h3>
+                                                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select PDF for Indexing</h3>
                                                     <p className="text-slate-500 font-medium font-mono text-xs uppercase tracking-widest">DRAG & DROP SUPPORTED</p>
                                                 </div>
                                             </div>
@@ -197,14 +193,14 @@ export default function PageNumbersPDFPage() {
                                     ) : (
                                         <div className="h-full flex flex-col items-center justify-center space-y-12 py-10">
                                             <div className="relative group">
-                                                <div className="w-56 h-72 bg-slate-950 border-2 border-white/5 rounded-[40px] flex items-center justify-center shadow-2xl relative overflow-hidden group-hover:border-rose-500/30 transition-all">
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 via-transparent to-transparent"></div>
+                                                <div className="w-56 h-72 bg-white border-2 border-slate-200 shadow-md rounded-[2.5rem] flex items-center justify-center relative overflow-hidden group-hover:border-blue-300 transition-all">
+                                                    <div className="absolute inset-0 bg-blue-50/50"></div>
 
                                                     {/* Dynamic Pagination Preview */}
                                                     <motion.div
                                                         layout
                                                         className={clsx(
-                                                            "absolute px-4 py-2 text-rose-400 font-black font-mono text-sm break-all max-w-full",
+                                                            "absolute px-4 py-2 text-blue-600 font-black font-mono text-sm break-all max-w-full z-10",
                                                             position.includes('top') ? "top-4" : "bottom-4",
                                                             position.includes('left') ? "left-4" : position.includes('right') ? "right-4" : "left-1/2 -translate-x-1/2"
                                                         )}
@@ -212,29 +208,29 @@ export default function PageNumbersPDFPage() {
                                                         {getPreviewNumber()}
                                                     </motion.div>
 
-                                                    <FileText className="w-24 h-24 text-slate-900" />
+                                                    <FileText className="w-24 h-24 text-slate-300" />
                                                 </div>
 
-                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full bg-slate-900 border border-rose-500/30 shadow-2xl">
-                                                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest whitespace-nowrap">Layout Engine Active</p>
+                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full bg-slate-900 border border-slate-700 shadow-xl z-20">
+                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest whitespace-nowrap">Layout Engine Active</p>
                                                 </div>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-xl font-black text-white px-6 truncate max-w-[400px]">{file.name}</p>
+                                                <p className="text-xl font-black text-slate-900 px-6 truncate max-w-[400px]">{file.name}</p>
                                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-3">Source Payload: {formatBytes(file.size)}</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="p-8 md:p-12 flex flex-col justify-between space-y-12">
+                                <div className="p-8 md:p-12 flex flex-col justify-between space-y-12 bg-white">
                                     <div className="space-y-10">
                                         <div className="space-y-6">
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Deployment Logic</h3>
-                                                <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
-                                                    <span className="text-[10px] font-black text-rose-400 uppercase">Interactive</span>
+                                                <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 border border-blue-100">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                    <span className="text-[10px] font-black text-blue-600 uppercase">Interactive</span>
                                                 </div>
                                             </div>
 
@@ -244,17 +240,17 @@ export default function PageNumbersPDFPage() {
                                                         key={pos.value}
                                                         onClick={() => setPosition(pos.value)}
                                                         className={clsx(
-                                                            "group py-4 px-2 rounded-2xl border transition-all text-center",
+                                                            "group py-4 px-2 rounded-2xl border transition-all text-center flex flex-col items-center justify-center",
                                                             position === pos.value
-                                                                ? "bg-rose-500/10 border-rose-500/50 text-white shadow-lg shadow-rose-500/5"
-                                                                : "bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-slate-800/50"
+                                                                ? "bg-blue-50 border-blue-300 text-slate-900 shadow-sm"
+                                                                : "bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-slate-50"
                                                         )}
                                                     >
                                                         <div className={clsx(
-                                                            "w-1.5 h-1.5 rounded-sm mx-auto mb-2 border",
-                                                            position === pos.value ? "bg-rose-400 border-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.5)]" : "bg-slate-700 border-slate-600"
+                                                            "w-1.5 h-1.5 rounded-sm mx-auto mb-2 border transition-all",
+                                                            position === pos.value ? "bg-blue-600 border-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.3)]" : "bg-slate-200 border-slate-300"
                                                         )}></div>
-                                                        <span className="text-[9px] font-black uppercase tracking-tighter opacity-70 group-hover:opacity-100">{pos.label.replace(' ', '\n')}</span>
+                                                        <span className="text-[9px] font-black uppercase tracking-tighter opacity-70 group-hover:opacity-100 leading-[1.2] whitespace-pre-line">{pos.label.replace(' ', '\n')}</span>
                                                     </button>
                                                 ))}
                                             </div>
@@ -270,19 +266,19 @@ export default function PageNumbersPDFPage() {
                                                         className={clsx(
                                                             "w-full group flex items-center justify-between p-4 rounded-2xl border transition-all",
                                                             format === opt.value
-                                                                ? "bg-rose-500/10 border-rose-500/30 text-white"
-                                                                : "bg-white/5 border-white/5 text-slate-500 hover:border-rose-500/10"
+                                                                ? "bg-blue-50 border-blue-200 text-slate-900 shadow-sm"
+                                                                : "bg-white border-slate-200 text-slate-500 hover:border-blue-200"
                                                         )}
                                                     >
                                                         <div className="flex flex-col items-start px-2">
                                                             <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 opacity-50 group-hover:opacity-100 transition-opacity">{opt.label}</span>
-                                                            <span className="text-sm font-bold tracking-tight text-white/90">{opt.preview}</span>
+                                                            <span className="text-sm font-bold tracking-tight text-slate-900">{opt.preview}</span>
                                                         </div>
                                                         <div className={clsx(
-                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                                            format === opt.value ? "border-rose-500 bg-rose-500" : "border-white/10"
+                                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shadow-sm",
+                                                            format === opt.value ? "border-blue-600 bg-blue-600" : "border-slate-200 bg-white"
                                                         )}>
-                                                            {format === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                            {format === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />}
                                                         </div>
                                                     </button>
                                                 ))}
@@ -298,9 +294,9 @@ export default function PageNumbersPDFPage() {
                                                         min="1"
                                                         value={startFrom}
                                                         onChange={(e) => setStartFrom(parseInt(e.target.value) || 1)}
-                                                        className="w-full bg-slate-950 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-rose-500/50 focus:ring-4 focus:ring-rose-500/10 transition-all outline-none font-black text-lg"
+                                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-black text-lg"
                                                     />
-                                                    <Zap className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-700" />
+                                                    <Zap className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
                                                 </div>
                                             </div>
                                         </div>
@@ -310,8 +306,10 @@ export default function PageNumbersPDFPage() {
                                         onClick={handleAddPageNumbers}
                                         disabled={isProcessing || !file}
                                         className={clsx(
-                                            "w-full btn-premium py-5 group gap-3 mt-4",
-                                            (isProcessing || !file) && "opacity-50 grayscale cursor-not-allowed"
+                                            "w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all mt-4",
+                                            (isProcessing || !file)
+                                                ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 hover:opacity-90 group"
                                         )}
                                     >
                                         {isProcessing ? (
@@ -337,59 +335,61 @@ export default function PageNumbersPDFPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="max-w-3xl mx-auto"
                     >
-                        <div className="glass-card-premium p-12 text-center space-y-12 relative overflow-hidden text-white">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-rose-500/20 rounded-full blur-[100px] -z-10"></div>
+                        <div className="bg-white border border-slate-200 shadow-xl rounded-[3rem] p-12 text-center space-y-12 relative overflow-hidden text-slate-900">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-50 rounded-full blur-[80px] -z-10"></div>
 
                             <div className="relative">
-                                <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 shadow-2xl animate-float">
-                                    <CheckCircle className="w-12 h-12 text-emerald-400" />
+                                <div className="w-24 h-24 rounded-3xl bg-emerald-50 border border-emerald-100 shadow-inner flex items-center justify-center mx-auto mb-6 animate-float">
+                                    <CheckCircle className="w-12 h-12 text-emerald-500" />
                                 </div>
                                 <h2 className="text-4xl font-black tracking-tight">Indexing Finalized!</h2>
-                                <p className="text-slate-400 font-medium mt-2">Professional pagination has been successfully injected</p>
+                                <p className="text-slate-600 font-medium mt-3">Professional pagination has been successfully injected</p>
                             </div>
 
-                            <div className="p-8 bg-slate-900 border border-white/5 shadow-2xl rounded-[40px] grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="p-8 bg-slate-50 border border-slate-100 shadow-sm rounded-[2.5rem] grid grid-cols-2 md:grid-cols-4 gap-6">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Layout</p>
-                                    <p className="text-xs font-black text-rose-400 uppercase truncate">{result.settings?.position || position}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Layout</p>
+                                    <p className="text-[10px] font-black text-blue-600 uppercase truncate px-2">{result.settings?.position || position}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pages</p>
-                                    <p className="text-xl font-black text-white">{result.pageCount}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pages</p>
+                                    <p className="text-xl font-black text-slate-900">{result.pageCount}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Initial</p>
-                                    <p className="text-xl font-black text-white">{result.settings?.startFrom || startFrom}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Initial</p>
+                                    <p className="text-xl font-black text-slate-900">{result.settings?.startFrom || startFrom}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</p>
-                                    <p className="text-[10px] font-black text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-full inline-block">VERIFIED</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                                    <p className="text-[10px] font-black text-emerald-600 border border-emerald-200 bg-emerald-50 px-3 py-1 rounded-full inline-block">VERIFIED</p>
                                 </div>
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center gap-4">
                                 <button
                                     onClick={handleDownload}
-                                    className="w-full btn-premium py-5 flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-md shadow-blue-500/20"
                                 >
                                     <Download className="w-6 h-6" />
                                     <span>Download Numbered PDF</span>
                                 </button>
                                 <button
                                     onClick={() => setShareModalOpen(true)}
-                                    className="w-full btn-glass py-5 border-white/10 hover:border-cyan-500/50 flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-sm"
                                 >
-                                    <Share2 className="w-5 h-5 text-cyan-400" />
+                                    <Share2 className="w-5 h-5 text-blue-500" />
                                     <span>Sync & Share</span>
                                 </button>
                             </div>
 
-                            <button
-                                onClick={handleClear}
-                                className="text-sm font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest"
-                            >
-                                Process Another Dataset
-                            </button>
+                            <div className="pt-4 border-t border-slate-100">
+                                <button
+                                    onClick={handleClear}
+                                    className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
+                                >
+                                    Process Another Dataset
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 )}
