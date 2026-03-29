@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"brainy-pdf/internal/middleware"
+	"brainy-pdf/internal/models"
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
 	"brainy-pdf/pkg/minio"
@@ -36,10 +37,10 @@ type LibraryItem struct {
 
 // LibraryHandler handles user library operations
 type LibraryHandler struct {
-	minioClient  *minio.Client
-	mongoClient  *mongodb.Client
-	pdfService   *services.PDFService
-	userService  *services.UserService
+	minioClient *minio.Client
+	mongoClient *mongodb.Client
+	pdfService  *services.PDFService
+	userService *services.UserService
 }
 
 // NewLibraryHandler creates a new library handler
@@ -109,9 +110,9 @@ func (h *LibraryHandler) Upload(c *gin.Context) {
 	pageCount, err := h.pdfService.GetPageCount(data)
 	if err != nil {
 		fmt.Printf("Warning: Failed to get page count for %s: %v\n", header.Filename, err)
-        // Keep pageCount as 0 or set to 1 as fallback? 
-        // 0 is technically correct if we don't know, but 1 is safer for UI.
-        // Let's keep 0 but log it.
+		// Keep pageCount as 0 or set to 1 as fallback?
+		// 0 is technically correct if we don't know, but 1 is safer for UI.
+		// Let's keep 0 but log it.
 	}
 
 	// Generate unique file key
@@ -248,12 +249,7 @@ func (h *LibraryHandler) List(c *gin.Context) {
 // Download handles GET /library/download/:id
 // Returns file stream from MinIO
 func (h *LibraryHandler) Download(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
-	if !exists || userID == "" {
-		utils.Unauthorized(c, "Authentication required")
-		return
-	}
-
+	userID, _ := middleware.GetUserID(c)
 	fileID := c.Param("id")
 	objectID, err := primitive.ObjectIDFromHex(fileID)
 	if err != nil {
@@ -261,39 +257,88 @@ func (h *LibraryHandler) Download(c *gin.Context) {
 		return
 	}
 
-	// Find file in MongoDB
-	var item LibraryItem
-	err = h.mongoClient.Collection("library").FindOne(
+	// Find file in MongoDB - check both collections (library for saved, documents for processed/temp)
+	var item models.Document
+
+	// First check documents collection (preferred for new system)
+	err = h.mongoClient.Documents().FindOne(
 		c.Request.Context(),
-		bson.M{"_id": objectID, "userId": userID},
+		bson.M{"_id": objectID},
 	).Decode(&item)
+
 	if err != nil {
-		utils.NotFound(c, "File not found")
-		return
+		// Fallback to library collection for legacy/saved items
+		var legacyItem LibraryItem
+		err = h.mongoClient.Collection("library").FindOne(
+			c.Request.Context(),
+			bson.M{"_id": objectID},
+		).Decode(&legacyItem)
+
+		if err != nil {
+			utils.NotFound(c, "File not found")
+			return
+		}
+
+		// Map legacy item to document model for consistent handling
+		item = models.Document{
+			ID:          legacyItem.ID,
+			UserID:      func() primitive.ObjectID { id, _ := primitive.ObjectIDFromHex(legacyItem.UserID); return id }(),
+			Filename:    legacyItem.FileName,
+			MinIOPath:   fmt.Sprintf("%s/%s", h.minioClient.GetBucketUserFiles(), legacyItem.FileKey),
+			Size:        legacyItem.Size,
+			MimeType:    legacyItem.MimeType,
+			IsTemporary: false,
+		}
+	}
+
+	// Authorization check:
+	// 1. If it's a temporary file, anyone with the ID can download.
+	// 2. If it's a static file, it MUST belong to the authenticated user.
+	if !item.IsTemporary {
+		if userID == "" || item.UserID.Hex() != userID {
+			utils.Unauthorized(c, "You do not have permission to download this file")
+			return
+		}
+	}
+
+	// Parse bucket and object path from MinIOPath if available
+	bucket := h.minioClient.GetBucketUserFiles()
+	objectPath := item.MinIOPath
+
+	if strings.Contains(item.MinIOPath, "/") {
+		idx := strings.Index(item.MinIOPath, "/")
+		bucket = item.MinIOPath[:idx]
+		objectPath = item.MinIOPath[idx+1:]
+	} else if item.IsTemporary {
+		bucket = h.minioClient.GetBucketTemp()
 	}
 
 	// Stream file from MinIO (Cloudflare R2)
-	fmt.Printf("[DEBUG] Library Download: UserID='%s', FileID='%s', FileKey='%s', Bucket='%s'\n", userID, fileID, item.FileKey, h.minioClient.GetBucketUserFiles())
-	
+	fmt.Printf("[DEBUG] Download: UserID='%s', FileID='%s', ObjectPath='%s', Bucket='%s', IsTemp=%v\n", userID, fileID, objectPath, bucket, item.IsTemporary)
+
 	// First check if file exists in R2
-	_, statErr := h.minioClient.GetFileInfo(c.Request.Context(), h.minioClient.GetBucketUserFiles(), item.FileKey)
+	_, statErr := h.minioClient.GetFileInfo(c.Request.Context(), bucket, objectPath)
 	if statErr != nil {
-		fmt.Printf("[ERROR] Library file not found in R2: FileKey='%s', Error='%v'\n", item.FileKey, statErr)
+		fmt.Printf("[ERROR] File not found in R2: ObjectPath='%s', Error='%v'\n", objectPath, statErr)
 		// File doesn't exist in storage - return 404, not 500
 		utils.NotFound(c, "File not found in storage. It may have been deleted.")
 		return
 	}
-	
-	data, err := h.minioClient.DownloadFile(c.Request.Context(), h.minioClient.GetBucketUserFiles(), item.FileKey)
+
+	data, err := h.minioClient.DownloadFile(c.Request.Context(), bucket, objectPath)
 	if err != nil {
-		fmt.Printf("[ERROR] Library Download failed: FileKey='%s', Error='%v'\n", item.FileKey, err)
+		fmt.Printf("[ERROR] Download failed: ObjectPath='%s', Error='%v'\n", objectPath, err)
 		utils.InternalServerError(c, "Failed to download file")
 		return
 	}
 
 	// Set headers for download
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, item.FileName))
-	c.Header("Content-Type", "application/pdf")
+	filename := item.Filename
+	if filename == "" {
+		filename = "processed_file.pdf"
+	}
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	c.Header("Content-Type", item.MimeType)
 	c.Header("Content-Length", fmt.Sprintf("%d", item.Size))
 
 	// Send response
@@ -396,23 +441,25 @@ func (h *LibraryHandler) GetPresignedURL(c *gin.Context) {
 	utils.Success(c, gin.H{
 		"success": true,
 		"data": gin.H{
-			"id":       fileID,
-			"fileName": item.FileName,
-			"url":      url,
+			"id":        fileID,
+			"fileName":  item.FileName,
+			"url":       url,
 			"expiresIn": "1 hour",
 		},
 	})
 }
 
 // RegisterRoutes registers library routes
-func (h *LibraryHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *LibraryHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware, optionalAuthMiddleware gin.HandlerFunc) {
 	library := r.Group("/library")
-	library.Use(authMiddleware)
 	{
-		library.POST("/upload", h.Upload)
-		library.GET("/list", h.List)
-		library.GET("/download/:id", h.Download)
-		library.GET("/url/:id", h.GetPresignedURL)
-		library.DELETE("/:id", h.Delete)
+		// Authenticated user routes
+		library.POST("/upload", authMiddleware, h.Upload)
+		library.GET("/list", authMiddleware, h.List)
+		library.DELETE("/:id", authMiddleware, h.Delete)
+
+		// Public/Optional routes (Download handles guest access internally)
+		library.GET("/download/:id", optionalAuthMiddleware, h.Download)
+		library.GET("/url/:id", optionalAuthMiddleware, h.GetPresignedURL)
 	}
 }

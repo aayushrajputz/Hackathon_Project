@@ -21,6 +21,7 @@ import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import ShareModal from '@/components/ui/ShareModal';
+import SignupBanner from '@/components/tools/SignupBanner';
 
 interface SplitFile {
     fileId: string;
@@ -139,7 +140,7 @@ export default function SplitPDFPage() {
                         </div>
                         <div>
                             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Split <span className="text-blue-600">PDF</span></h1>
-                            <p className="text-slate-600 font-medium mt-1">Extract specific page ranges with precision</p>
+                            <p className="text-slate-600 font-medium mt-1">Extract exactly the pages you need from any document.</p>
                         </div>
                     </motion.div>
 
@@ -179,8 +180,8 @@ export default function SplitPDFPage() {
                                                         </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select Document</h3>
-                                                        <p className="text-slate-500 font-medium text-sm">Drag and drop or browse files</p>
+                                                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select PDF</h3>
+                                                        <p className="text-slate-500 font-medium text-sm">Drag and drop or browse to start splitting</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -210,7 +211,7 @@ export default function SplitPDFPage() {
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                                     <Scissors className="w-5 h-5 text-blue-600" />
-                                                    Split Configuration
+                                                    Split Settings
                                                 </h3>
                                                 <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 cursor-help group relative">
                                                     <HelpCircle className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
@@ -262,7 +263,7 @@ export default function SplitPDFPage() {
                                             ) : (
                                                 <>
                                                     <Scissors className="w-6 h-6" />
-                                                    <span>Split Document</span>
+                                                    <span>Split PDF</span>
                                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </>
                                             )}
@@ -283,17 +284,17 @@ export default function SplitPDFPage() {
                             <div className="w-24 h-24 rounded-3xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-6 shadow-inner animate-float">
                                 <CheckCircle className="w-12 h-12 text-emerald-500" />
                             </div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Splitting Success!</h2>
-                            <p className="text-slate-600 font-medium mt-3">Generated {result.files.length} custom documents</p>
+                            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Success!</h2>
+                            <p className="text-slate-600 font-medium mt-3">We've created {result.files.length} new documents for you.</p>
 
                             <div className="mt-10 flex justify-center gap-12 bg-slate-50 border border-slate-100 py-6 px-12 rounded-3xl inline-flex w-auto mx-auto shadow-sm">
                                 <div className="text-center">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Source Pages</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Input Pages</p>
                                     <p className="text-2xl font-black text-slate-900">{result.inputPages}</p>
                                 </div>
                                 <div className="w-px h-12 bg-slate-200"></div>
                                 <div className="text-center">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Files</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Files Created</p>
                                     <p className="text-2xl font-black text-slate-900">{result.files.length}</p>
                                 </div>
                             </div>
@@ -349,9 +350,10 @@ export default function SplitPDFPage() {
                                 onClick={handleClear}
                                 className="px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-bold hover:text-blue-600 hover:border-blue-500 transition-all text-xs uppercase tracking-[0.2em] shadow-sm"
                             >
-                                Process New Document
+                                Process New PDF
                             </button>
                         </div>
+                        <SignupBanner />
                     </motion.div>
                 )}
             </div>

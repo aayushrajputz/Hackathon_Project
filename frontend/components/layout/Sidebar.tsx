@@ -134,18 +134,20 @@ export default function Sidebar() {
                                     <Home className={clsx("w-5 h-5", pathname === '/dashboard' ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
                                     <span>Dashboard</span>
                                 </Link>
-                                <Link
-                                    href="/library"
-                                    className={clsx(
-                                        'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-xs uppercase tracking-tight group',
-                                        pathname === '/library'
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                                    )}
-                                >
-                                    <FolderOpen className={clsx("w-5 h-5", pathname === '/library' ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
-                                    <span>Vault Library</span>
-                                </Link>
+                                {user && (
+                                    <Link
+                                        href="/library"
+                                        className={clsx(
+                                            'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-xs uppercase tracking-tight group',
+                                            pathname === '/library'
+                                                ? 'bg-blue-50 text-blue-600'
+                                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                        )}
+                                    >
+                                        <FolderOpen className={clsx("w-5 h-5", pathname === '/library' ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
+                                        <span>Vault Library</span>
+                                    </Link>
+                                )}
                             </div>
                         </div>
 
@@ -183,51 +185,53 @@ export default function Sidebar() {
                             )}
                         </div>
 
-                        <div className="pb-10">
-                            <button
-                                onClick={() => setAiExpanded(!aiExpanded)}
-                                className="flex items-center justify-between w-full px-5 mb-4 group"
-                            >
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">AI Processing</p>
-                                <ChevronDown
-                                    className={clsx(
-                                        'w-4 h-4 text-slate-400 transition-transform duration-300 group-hover:text-blue-600',
-                                        aiExpanded && 'rotate-180'
-                                    )}
-                                />
-                            </button>
-                            {aiExpanded && (
-                                <div className="space-y-1">
-                                    {aiTools.map((tool) => (
-                                        <Link
-                                            key={tool.href}
-                                            href={tool.href}
-                                            className={clsx(
-                                                'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-tight group',
-                                                pathname === tool.href
-                                                    ? 'bg-blue-50 text-blue-600'
-                                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                                            )}
-                                        >
-                                            <tool.icon className={clsx("w-4 h-4", pathname === tool.href ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
-                                            <span>{tool.name}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        {user && (
+                            <div className="pb-10">
+                                <button
+                                    onClick={() => setAiExpanded(!aiExpanded)}
+                                    className="flex items-center justify-between w-full px-5 mb-4 group"
+                                >
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">AI Processing</p>
+                                    <ChevronDown
+                                        className={clsx(
+                                            'w-4 h-4 text-slate-400 transition-transform duration-300 group-hover:text-blue-600',
+                                            aiExpanded && 'rotate-180'
+                                        )}
+                                    />
+                                </button>
+                                {aiExpanded && (
+                                    <div className="space-y-1">
+                                        {aiTools.map((tool) => (
+                                            <Link
+                                                key={tool.href}
+                                                href={tool.href}
+                                                className={clsx(
+                                                    'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-tight group',
+                                                    pathname === tool.href
+                                                        ? 'bg-blue-50 text-blue-600'
+                                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                                )}
+                                            >
+                                                <tool.icon className={clsx("w-4 h-4", pathname === tool.href ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
+                                                <span>{tool.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </nav>
 
                     <div className="p-6 mt-auto">
                         <div className="bg-slate-50 border border-slate-200 rounded-3xl p-5 space-y-5 shadow-sm">
-                            {user && (
+                            {user ? (
                                 <>
                                     <div className="flex items-center gap-3">
                                         <div className="relative">
                                             {user.photoURL ? (
                                                 <Image
                                                     src={user.photoURL}
-                                                    alt={user.displayName}
+                                                    alt={user.displayName || 'User'}
                                                     width={44}
                                                     height={44}
                                                     className="rounded-xl border border-slate-200 shadow-sm"
@@ -240,7 +244,7 @@ export default function Sidebar() {
                                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user.displayName}</p>
+                                            <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user.displayName || 'User'}</p>
                                             <p className="text-[10px] text-blue-600 font-black truncate uppercase tracking-[0.1em]">{user.plan || 'Free'} Member</p>
                                         </div>
                                     </div>
@@ -284,6 +288,20 @@ export default function Sidebar() {
                                         </button>
                                     </div>
                                 </>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="p-3 bg-blue-100 rounded-xl">
+                                        <Brain className="w-6 h-6 text-blue-600 mb-2" />
+                                        <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Guest Access</p>
+                                        <p className="text-[9px] text-blue-700 font-bold leading-tight mt-1">Sign in to save files and unlock AI features.</p>
+                                    </div>
+                                    <Link
+                                        href="/login"
+                                        className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+                                    >
+                                        Sign In
+                                    </Link>
+                                </div>
                             )}
                         </div>
                     </div>

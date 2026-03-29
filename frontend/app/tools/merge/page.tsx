@@ -25,6 +25,7 @@ import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import ShareModal from '@/components/ui/ShareModal';
+import SignupBanner from '@/components/tools/SignupBanner';
 
 interface FileWithId {
     id: string;
@@ -79,9 +80,9 @@ export default function MergePDFPage() {
             });
 
             setResult(response.data.data);
-            toast.success('Document Matrix Synchronized');
+            toast.success('PDFs Merged Successfully');
         } catch (error: any) {
-            toast.error(error.response?.data?.error?.message || 'Synthesis engine failed');
+            toast.error(error.response?.data?.error?.message || 'Merging failed');
         } finally {
             setIsProcessing(false);
         }
@@ -134,14 +135,10 @@ export default function MergePDFPage() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2.5 mb-2">
-                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest">Global PDF Nexus</span>
-                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                                    <Shield className="w-3.5 h-3.5" />
-                                    Lossless
-                                </div>
+                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest">Fast & Secure</span>
                             </div>
                             <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Merge <span className="text-blue-600">PDF</span></h1>
-                            <p className="text-slate-500 font-bold mt-2 text-lg">Unify multi-document architectures seamlessly</p>
+                            <p className="text-slate-500 font-bold mt-2 text-lg">Combine multiple documents into one in seconds.</p>
                         </div>
                     </motion.div>
 
@@ -179,8 +176,8 @@ export default function MergePDFPage() {
                                             <Upload className="w-10 h-10 text-blue-600" />
                                         </div>
                                         <div className="space-y-3">
-                                            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">Inject Files</h3>
-                                            <p className="text-slate-400 font-bold text-[10px] uppercase leading-relaxed tracking-widest">DRAG & DROP MULTIPLE PDFS TO COMMENCE SYNTHESIS</p>
+                                            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">Add Files</h3>
+                                            <p className="text-slate-400 font-bold text-[10px] uppercase leading-relaxed tracking-widest">Drag and drop PDFs to start merging</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -269,9 +266,9 @@ export default function MergePDFPage() {
                                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
                                             <Database className="w-6 h-6 text-blue-400" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-white tracking-tight leading-none uppercase">Configuration Matrix</h3>
+                                        <h3 className="text-2xl font-black text-white tracking-tight leading-none uppercase">Merge Options</h3>
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Engine v12.4 Lossless Unification</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Secure processing enabled</p>
                                 </div>
 
                                 <div className="flex-1 space-y-8">
@@ -295,7 +292,7 @@ export default function MergePDFPage() {
                                     <div className="p-6 rounded-[2rem] bg-blue-600/10 border border-blue-500/20 flex items-start gap-4">
                                         <Zap className="w-6 h-6 text-blue-400 shrink-0 mt-0.5" />
                                         <p className="text-[11px] text-blue-100 leading-relaxed font-bold uppercase tracking-tight">
-                                            Files will be synthesized in the <span className="text-white">exact sequential order</span> defined in your workspace stack.
+                                            Files will be merged in the <span className="text-white">exact order</span> they appear in your list.
                                         </p>
                                     </div>
                                 </div>
@@ -314,12 +311,12 @@ export default function MergePDFPage() {
                                         {isProcessing ? (
                                             <>
                                                 <Loader2 className="w-6 h-6 animate-spin text-white" />
-                                                <span className="text-xs uppercase tracking-widest">Synchronizing...</span>
+                                                <span className="text-xs uppercase tracking-widest">Merging...</span>
                                             </>
                                         ) : (
                                             <>
                                                 <ZapIcon className="w-6 h-6 group-hover:scale-125 transition-transform" />
-                                                <span className="text-xs uppercase tracking-widest">Synthesize Stream</span>
+                                                <span className="text-xs uppercase tracking-widest">Merge PDFs</span>
                                                 <ArrowUpRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                                             </>
                                         )}
@@ -347,8 +344,8 @@ export default function MergePDFPage() {
                                 <div className="w-32 h-32 rounded-[3.5rem] bg-blue-600 shadow-2xl shadow-blue-500/30 flex items-center justify-center mx-auto mb-10 border border-white/20 animate-in zoom-in duration-1000">
                                     <CheckCircle className="w-16 h-16 text-white" />
                                 </div>
-                                <h1 className="text-6xl font-black tracking-tighter text-slate-900 leading-none">Matrix <span className="text-blue-600">Unified</span></h1>
-                                <p className="text-slate-500 font-bold text-lg max-w-sm mx-auto leading-relaxed">Your document stack has been synthesized into a single high-fidelity architecture.</p>
+                                <h1 className="text-6xl font-black tracking-tighter text-slate-900 leading-none">Files <span className="text-blue-600">Combined</span></h1>
+                                <p className="text-slate-500 font-bold text-lg max-w-sm mx-auto leading-relaxed">Your documents have been merged into a single PDF.</p>
                             </div>
 
                             <div className="bg-slate-50 border border-slate-100 rounded-[3rem] p-10 grid grid-cols-3 gap-8 shadow-inner">
@@ -372,14 +369,14 @@ export default function MergePDFPage() {
                                     className="w-full py-7 bg-blue-600 hover:bg-blue-700 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-4 transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1"
                                 >
                                     <Download className="w-7 h-7" />
-                                    <span>Extract Unified Asset</span>
+                                    <span>Download Merged PDF</span>
                                 </button>
                                 <button
                                     onClick={() => setShareModalOpen(true)}
                                     className="w-full py-7 bg-slate-900 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-4 transition-all shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-1"
                                 >
                                     <Share2 className="w-6 h-6 text-blue-400" />
-                                    <span>Sync to Global Nexus</span>
+                                    <span>Share Link</span>
                                 </button>
                             </div>
 
@@ -392,6 +389,7 @@ export default function MergePDFPage() {
                                 </button>
                             </div>
                         </div>
+                        <SignupBanner />
                     </motion.div>
                 )}
             </div>

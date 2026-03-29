@@ -21,6 +21,7 @@ import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
 import clsx from 'clsx';
 import ShareModal from '@/components/ui/ShareModal';
+import SignupBanner from '@/components/tools/SignupBanner';
 
 type QualityLevel = 'low' | 'medium' | 'high';
 
@@ -123,7 +124,7 @@ export default function CompressPDFPage() {
                         </div>
                         <div>
                             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Compress <span className="text-blue-600">PDF</span></h1>
-                            <p className="text-slate-600 font-medium mt-1">Shrink file size without losing integrity</p>
+                            <p className="text-slate-600 font-medium mt-1">Reduce file size while keeping high quality.</p>
                         </div>
                     </motion.div>
 
@@ -135,7 +136,7 @@ export default function CompressPDFPage() {
                             className="px-6 py-3 rounded-xl text-sm font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 shadow-sm transition-all flex items-center gap-2 bg-white"
                         >
                             <X className="w-4 h-4" />
-                            Clear Workspace
+                            Reset
                         </motion.button>
                     )}
                 </div>
@@ -159,7 +160,7 @@ export default function CompressPDFPage() {
                                                 <Upload className="w-12 h-12 text-blue-500" />
                                             </div>
                                             <div className="space-y-2">
-                                                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select Document</h3>
+                                                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Select PDF</h3>
                                                 <p className="text-slate-500 font-medium">Standard PDF files supported</p>
                                             </div>
                                         </div>
@@ -196,7 +197,7 @@ export default function CompressPDFPage() {
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                         <Minimize2 className="w-5 h-5 text-blue-600" />
-                                        Optimization Engine
+                                        Compression Settings
                                     </h3>
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Select Strength</p>
                                 </div>
@@ -274,17 +275,17 @@ export default function CompressPDFPage() {
                                 <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-6 border border-emerald-100 shadow-inner animate-float">
                                     <CheckCircle className="w-12 h-12 text-emerald-500" />
                                 </div>
-                                <h2 className="text-4xl font-black tracking-tight">Optimization Success!</h2>
-                                <p className="text-slate-600 font-medium mt-3">Saved <span className="text-emerald-600 font-bold">{result.reduction}</span> of disk space</p>
+                                <h2 className="text-4xl font-black tracking-tight">Successfully Compressed</h2>
+                                <p className="text-slate-600 font-medium mt-3">We saved <span className="text-emerald-600 font-bold">{result.reduction}</span> of disk space</p>
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-2 shadow-sm">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Original State</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Before</p>
                                     <p className="text-3xl font-black text-slate-700">{formatBytes(result.originalSize)}</p>
                                 </div>
                                 <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 space-y-2 shadow-sm">
-                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Optimized State</p>
+                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">After</p>
                                     <p className="text-3xl font-black text-emerald-600">{formatBytes(result.compressedSize)}</p>
                                 </div>
                             </div>
@@ -311,10 +312,11 @@ export default function CompressPDFPage() {
                                     onClick={handleClear}
                                     className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
                                 >
-                                    Process Another Document
+                                    Process Another PDF
                                 </button>
                             </div>
                         </div>
+                        <SignupBanner />
                     </motion.div>
                 )}
             </div>

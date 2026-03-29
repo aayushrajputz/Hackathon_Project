@@ -134,7 +134,7 @@ func main() {
 		pdfHandler.RegisterRoutes(v1, authMiddleware)
 		aiHandler.RegisterRoutes(v1, authMiddleware)
 		storageHandler.RegisterRoutes(v1, authMiddleware, optionalAuthMiddleware)
-		libraryHandler.RegisterRoutes(v1, authMiddleware)
+		libraryHandler.RegisterRoutes(v1, authMiddleware, optionalAuthMiddleware)
 		log.Println("📤 Registering Share routes...")
 		shareHandler.RegisterRoutes(v1, authMiddleware)
 		conversionHandler.RegisterRoutes(v1, optionalAuthMiddleware)

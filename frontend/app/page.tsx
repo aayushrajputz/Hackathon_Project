@@ -41,32 +41,27 @@ const tools = [
 const features = [
     {
         icon: Zap,
-        title: 'Neural Velocity',
-        description: 'Process PDFs with sub-second latency via our hyper-optimized Go engine.',
+        title: 'Fast Processing',
+        description: 'Merge and split PDFs in seconds. No waiting in long queues.',
     },
     {
         icon: ShieldCheck,
-        title: 'Zero-Trust Security',
-        description: 'End-to-end encryption with immediate volatile memory purging on completion.',
+        title: 'Privacy First',
+        description: 'Your documents are your business. We delete all files immediately after processing.',
     },
     {
         icon: Brain,
-        title: 'Cognitive AI',
-        description: 'Deep semantic analysis for summaries, metadata, and intelligent OCR.',
+        title: 'AI Summaries',
+        description: 'Get key insights from long documents without reading every page.',
     },
     {
         icon: Sparkles,
-        title: 'Professional Identity',
-        description: 'Apply high-fidelity watermarks, official badges, and custom annotations.',
+        title: 'Clean Design',
+        description: 'No complex menus or cluttered interfaces. Just straightforward tools.',
     },
 ];
 
-const stats = [
-    { value: '25M+', label: 'Successful Operations', icon: Cpu },
-    { value: '800K+', label: 'Platform Users', icon: Users },
-    { value: '99.99%', label: 'Infrastructure Uptime', icon: Globe },
-    { value: '4.95', label: 'Customer Trust', icon: Star },
-];
+// Stats removed - minimal brand approach
 
 export default function HomePage() {
     const { isAuthenticated } = useAuthStore();
@@ -115,7 +110,7 @@ export default function HomePage() {
                                         Login
                                     </Link>
                                     <Link href="/login" className="px-8 py-3.5 rounded-2xl bg-blue-600 text-white font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5">
-                                        Join Pro
+                                        Sign Up
                                     </Link>
                                 </>
                             )}
@@ -135,45 +130,53 @@ export default function HomePage() {
                     >
                         <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-50 border border-blue-100 shadow-sm">
                             <Cloud className="w-4 h-4 text-blue-600" />
-                            <span className="text-xs text-blue-800 font-black uppercase tracking-[0.2em]">Next-Gen PDF Infrastructure</span>
+                            <span className="text-xs text-blue-800 font-black uppercase tracking-[0.2em]">Built for students and small businesses</span>
                         </div>
 
                         <h1 className="text-5xl md:text-8xl lg:text-9xl font-black text-slate-900 leading-[0.95] tracking-tight">
-                            Elevate Your <br />
-                            <span className="text-blue-600">Documents</span>
+                            PDF Tools. <br />
+                            <span className="text-blue-600">Simplified.</span>
                         </h1>
 
                         <p className="text-lg md:text-2xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
-                            The professional document engine powered by neural intelligence.
-                            Merge, secure, and transform PDFs with atomic precision.
+                            No complex menus, no annoying popups. Just high-quality tools to merge, split, and compress your PDFs in seconds.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8">
-                            <Link href="/login" className="px-12 py-6 bg-blue-600 text-white font-black rounded-3xl text-lg uppercase tracking-widest hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1 flex items-center justify-center gap-4 group">
-                                Start Free Workspace
+                            <Link href="/tools/merge" className="px-12 py-6 bg-blue-600 text-white font-black rounded-3xl text-lg uppercase tracking-widest hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1 flex items-center justify-center gap-4 group">
+                                Try Merge PDF
                                 <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                             </Link>
-                            <Link href="/pricing" className="px-12 py-6 bg-white text-slate-900 font-black rounded-3xl text-lg uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-all shadow-lg hover:-translate-y-1">
-                                Enterprise Plans
+                            <Link href="/login" className="px-12 py-6 bg-white text-slate-900 font-black rounded-3xl text-lg uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-all shadow-lg hover:-translate-y-1">
+                                Create Free Account
                             </Link>
                         </div>
                     </motion.div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-24">
-                        {stats.map((stat, index) => (
-                            <motion.div
-                                key={stat.label}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.5 + index * 0.1 }}
-                                className="p-10 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all group"
-                            >
-                                <stat.icon className="w-8 h-8 text-blue-600 mx-auto mb-6 group-hover:scale-110 transition-transform" />
-                                <div className="text-4xl font-black text-slate-900 mb-2 tracking-tight">{stat.value}</div>
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{stat.label}</div>
-                            </motion.div>
-                        ))}
+                    {/* Value Prop Section (Replacing Stats) */}
+                    <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto pt-24 text-left">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="space-y-4"
+                        >
+                            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Private Storage</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                Save your processed files to your secure library. Access them from any device, anytime. No more searching through downloads.
+                            </p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className="space-y-4"
+                        >
+                            <h3 className="text-2xl font-black text-blue-600 uppercase tracking-tight">Shareable Links</h3>
+                            <p className="text-slate-500 font-medium leading-relaxed">
+                                Generate temporary links to share your PDFs with clients or colleagues instantly. Control who sees your work without attachments.
+                            </p>
+                        </motion.div>
                     </div>
                 </div>
             </section>
@@ -183,13 +186,13 @@ export default function HomePage() {
                 <div className="container mx-auto">
                     <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8 text-center md:text-left">
                         <div className="space-y-4">
-                            <div className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs">The Ecosystem</div>
+                            <div className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs">Features</div>
                             <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
-                                Precision <span className="text-blue-600">Engineered</span>
+                                Everything you <span className="text-blue-600">need</span>
                             </h2>
                         </div>
                         <p className="text-slate-500 font-bold max-w-md text-lg leading-relaxed">
-                            A complete suite of atomic PDF modules designed for professional workflows and high-volume operations.
+                            A simple yet powerful set of tools to help you manage your documents efficiently.
                         </p>
                     </div>
 
@@ -261,18 +264,18 @@ export default function HomePage() {
 
                         <div className="relative z-10 max-w-3xl mx-auto space-y-10">
                             <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tight">
-                                Ready for <br />
-                                Professional <span className="text-blue-600">Flow</span>?
+                                Ready to <br />
+                                get <span className="text-blue-600">started</span>?
                             </h2>
                             <p className="text-slate-400 text-xl font-medium leading-relaxed">
-                                Join 800,000+ engineers and professionals automating their document destiny.
+                                Join thousands of students and freelancers who trust BinaryPDF for their document work.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
                                 <Link href="/login" className="px-12 py-5 bg-blue-600 text-white font-black rounded-2xl text-lg uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-1">
-                                    Deploy Free Instance
+                                    Create Free Account
                                 </Link>
                                 <Link href="/pricing" className="px-12 py-5 bg-slate-800 text-white font-black rounded-2xl text-lg uppercase tracking-widest border border-slate-700 hover:bg-slate-700 transition-all hover:-translate-y-1">
-                                    Enterprise Specs
+                                    View Pricing
                                 </Link>
                             </div>
                         </div>

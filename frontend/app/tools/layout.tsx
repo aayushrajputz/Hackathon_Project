@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
+
+const guestAllowedTools = [
+    '/tools/merge',
+    '/tools/split',
+    '/tools/compress'
+];
 
 export default function ToolsLayout({
     children,
@@ -15,18 +21,20 @@ export default function ToolsLayout({
 }) {
     const { isAuthenticated, isLoading, initAuth } = useAuthStore();
     const router = useRouter();
+    const pathname = usePathname();
+    const isGuestAllowed = guestAllowedTools.includes(pathname);
 
     // Initialize auth on mount
     useEffect(() => {
         initAuth();
     }, [initAuth]);
 
-    // Redirect to login if not authenticated
+    // Redirect to login if not authenticated AND tool is not guest-allowed
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (!isLoading && !isAuthenticated && !isGuestAllowed) {
             router.push('/login');
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [isAuthenticated, isLoading, router, isGuestAllowed]);
 
     // Show loading while checking auth
     if (isLoading) {
@@ -40,8 +48,8 @@ export default function ToolsLayout({
         );
     }
 
-    // Show access denied if not authenticated
-    if (!isAuthenticated) {
+    // Show access denied if not authenticated AND tool is not guest-allowed
+    if (!isAuthenticated && !isGuestAllowed) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
                 <div className="text-center bg-white p-12 rounded-[2.5rem] border border-slate-200 shadow-xl max-w-lg">
