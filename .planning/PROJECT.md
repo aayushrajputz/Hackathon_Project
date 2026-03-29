@@ -13,13 +13,13 @@ BinaryPDF is a lean, professional Go + Next.js PDF toolkit for students, freelan
 
 ## Requirements
 
-### Active
-- [ ] **UI-01**: Remove all fake social proof stats (25M+, 800K+, etc.) from the landing page.
-- [ ] **UI-02**: Rewrite landing page copy to be minimal, human-centric, and benefit-focused (Notion/Linear style).
-- [ ] **UI-03**: Target copy specifically at Indian students, freelancers, and small business owners.
-- [ ] **FE-01**: Enable guest access for Merge, Compress, and Split PDF tools (bypass login).
-- [ ] **FE-02**: Implement a subtle post-operation signup banner for guests ("Save and share your files — create a free account").
-- [ ] **BE-01**: Ensure backend handlers allow unauthenticated requests for Merge, Compress, and Split (with "free" plan limits).
+### Validated (v1.1 Beta Polish)
+- [x] **UI-01**: Removed all fake social proof stats (25M+, 800K+, etc.) from the landing page.
+- [x] **UI-02**: Rewrote landing page copy to be minimal, human-centric, and benefit-focused.
+- [x] **UI-03**: Targeted copy at Indian students, freelancers, and SMOs.
+- [x] **FE-01**: Enabled guest access for Merge, Compress, and Split PDF tools (bypass login).
+- [x] **FE-02**: Implemented a subtle post-operation signup banner for guests.
+- [x] **BE-01**: Ensured backend handlers allow unauthenticated requests for Merge, Compress, and Split.
 
 ### Validated (v1.0 Scalability Hardening)
 - [x] Worker pool to cap concurrent PDF operations
@@ -53,4 +53,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 — Milestone v1.1 started*
+*Last updated: 2026-03-30 — Milestone v1.1 Complete*
