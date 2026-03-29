@@ -113,10 +113,7 @@ func (s *StorageService) UploadFile(ctx context.Context, userID, originalName, c
 
 	// Set user ID if authenticated
 	if userID != "" {
-		userObjID, err := primitive.ObjectIDFromHex(userID)
-		if err == nil {
-			doc.UserID = userObjID
-		}
+		doc.UserID = userID
 	}
 
 	_, err := s.mongoClient.Documents().InsertOne(ctx, doc)
@@ -208,10 +205,7 @@ func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, origin
 	}
 
 	if userID != "" {
-		userObjID, err := primitive.ObjectIDFromHex(userID)
-		if err == nil {
-			doc.UserID = userObjID
-		}
+		doc.UserID = userID
 	}
 
 	_, err := s.mongoClient.Documents().InsertOne(ctx, doc)
@@ -290,10 +284,7 @@ func (s *StorageService) DeleteFile(ctx context.Context, fileID, userID string) 
 	// Build filter
 	filter := bson.M{"_id": objID}
 	if userID != "" {
-		userObjID, err := primitive.ObjectIDFromHex(userID)
-		if err == nil {
-			filter["userId"] = userObjID
-		}
+		filter["userId"] = userID
 	}
 
 	var doc models.Document
@@ -325,13 +316,8 @@ func (s *StorageService) DeleteFile(ctx context.Context, fileID, userID string) 
 
 // ListUserFiles lists files in a user's library
 func (s *StorageService) ListUserFiles(ctx context.Context, userID string, folderID *string, page, limit int) ([]models.Document, int64, error) {
-	userObjID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, 0, fmt.Errorf("invalid user ID: %w", err)
-	}
-
 	filter := bson.M{
-		"userId":      userObjID,
+		"userId":      userID,
 		"isTemporary": false,
 	}
 

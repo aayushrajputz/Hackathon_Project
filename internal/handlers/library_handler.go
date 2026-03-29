@@ -282,7 +282,7 @@ func (h *LibraryHandler) Download(c *gin.Context) {
 		// Map legacy item to document model for consistent handling
 		item = models.Document{
 			ID:          legacyItem.ID,
-			UserID:      func() primitive.ObjectID { id, _ := primitive.ObjectIDFromHex(legacyItem.UserID); return id }(),
+			UserID:      legacyItem.UserID,
 			Filename:    legacyItem.FileName,
 			MinIOPath:   fmt.Sprintf("%s/%s", h.minioClient.GetBucketUserFiles(), legacyItem.FileKey),
 			Size:        legacyItem.Size,
@@ -295,7 +295,7 @@ func (h *LibraryHandler) Download(c *gin.Context) {
 	// 1. If it's a temporary file, anyone with the ID can download.
 	// 2. If it's a static file, it MUST belong to the authenticated user.
 	if !item.IsTemporary {
-		if userID == "" || item.UserID.Hex() != userID {
+		if userID == "" || item.UserID != userID {
 			utils.Unauthorized(c, "You do not have permission to download this file")
 			return
 		}

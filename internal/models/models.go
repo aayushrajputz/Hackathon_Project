@@ -8,26 +8,26 @@ import (
 
 // User represents a registered user
 type User struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	FirebaseUID string             `bson:"firebaseUid" json:"firebaseUid"`
-	Email       string             `bson:"email" json:"email"`
-	DisplayName string             `bson:"displayName" json:"displayName"`
-	PhotoURL    string             `bson:"photoURL" json:"photoURL"`
-	Role        string             `bson:"role" json:"role"` // user, admin
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	FirebaseUID  string             `bson:"firebaseUid" json:"firebaseUid"`
+	Email        string             `bson:"email" json:"email"`
+	DisplayName  string             `bson:"displayName" json:"displayName"`
+	PhotoURL     string             `bson:"photoURL" json:"photoURL"`
+	Role         string             `bson:"role" json:"role"` // user, admin
 	Plan         string             `bson:"plan" json:"plan"` // free, student, pro, plus, business
 	StorageUsed  int64              `bson:"storageUsed" json:"storageUsed"`
-	StorageLimit int64             `bson:"storageLimit" json:"storageLimit"`
-	AIChatCount  int               `bson:"aiChatCount" json:"aiChatCount"`
-	ToolkitCount int               `bson:"toolkitCount" json:"toolkitCount"`
+	StorageLimit int64              `bson:"storageLimit" json:"storageLimit"`
+	AIChatCount  int                `bson:"aiChatCount" json:"aiChatCount"`
+	ToolkitCount int                `bson:"toolkitCount" json:"toolkitCount"`
 	LastReset    time.Time          `bson:"lastReset" json:"lastReset"`
 	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Document represents a stored PDF document
 type Document struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	UserID       primitive.ObjectID `bson:"userId,omitempty" json:"userId"`
+	UserID       string             `bson:"userId,omitempty" json:"userId"`
 	Filename     string             `bson:"filename" json:"filename"`
 	OriginalName string             `bson:"originalName" json:"originalName"`
 	MimeType     string             `bson:"mimeType" json:"mimeType"`
@@ -69,7 +69,7 @@ type AIResult struct {
 
 // OCRResult represents OCR extraction results
 type OCRResult struct {
-	Text  string         `json:"text"`
+	Text  string          `json:"text"`
 	Pages []OCRPageResult `json:"pages"`
 }
 
@@ -94,8 +94,8 @@ type SensitiveDataResult struct {
 
 // SensitiveDataFinding represents a single sensitive data finding
 type SensitiveDataFinding struct {
-	Type     string `json:"type"`     // ssn, email, phone, credit_card, etc.
-	Value    string `json:"value"`    // Masked value
+	Type     string `json:"type"`  // ssn, email, phone, credit_card, etc.
+	Value    string `json:"value"` // Masked value
 	Page     int    `json:"page"`
 	Location string `json:"location"` // Approximate location on page
 }
