@@ -99,6 +99,7 @@ export default function ConvertPage() {
     const [files, setFiles] = useState<File[]>([]);
     const [status, setStatus] = useState<JobStatus>('idle');
     const [jobId, setJobId] = useState<string | null>(null);
+    const [fileId, setFileId] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -187,10 +188,13 @@ export default function ConvertPage() {
                     setStatus('processing');
                 } else if (job.status === 'completed') {
                     setStatus('completed');
-                    if (selectedCard?.outputFormat === 'pdf') {
+                    if (job.fileId) {
+                        setFileId(job.fileId);
+                    }
+                    if (selectedCard?.outputFormat === 'pdf' && job.fileId) {
                         try {
-                            const dlRes = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
-                            const url = window.URL.createObjectURL(new Blob([dlRes.data]));
+                            const dlRes = await api.get(`/library/download/${job.fileId}`, { responseType: 'blob' });
+                            const url = window.URL.createObjectURL(new Blob([dlRes.data], { type: 'application/pdf' }));
                             setPreviewUrl(url);
                         } catch (e) {
                             console.error("Diagnostic: Preview failed", e);
@@ -209,40 +213,39 @@ export default function ConvertPage() {
     }, [jobId, status, selectedCard]);
 
     const handleDownload = async () => {
-        if (!jobId || !previewUrl) {
-            if (jobId) {
-                try {
-                    const response = await api.get(`/convert/download/${jobId}`, { responseType: 'blob' });
-                    const contentDisposition = response.headers['content-disposition'];
-                    let filename = 'extracted_asset';
-                    if (contentDisposition) {
-                        const match = contentDisposition.match(/filename="(.+)"/);
-                        if (match) filename = match[1];
-                    }
-                    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } catch (e) { toast.error('Asset extraction error'); }
-            }
-            return;
-        }
+        const downloadId = fileId || jobId;
+        if (!downloadId) return;
 
-        const link = document.createElement('a');
-        link.href = previewUrl;
-        link.download = `converted_${files[0]?.name.split('.')[0] || 'result'}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+            const url = fileId ? `/library/download/${fileId}` : `/convert/download/${jobId}`;
+            const response = await api.get(url, { responseType: 'blob' });
+
+            const contentDisposition = response.headers['content-disposition'];
+            let filename = `converted_${files[0]?.name.split('.')[0] || 'result'}.${selectedCard?.outputFormat || 'pdf'}`;
+
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="(.+)"/);
+                if (match) filename = match[1];
+            }
+
+            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+            toast.error('Asset extraction error');
+        }
     };
 
     const handleReset = () => {
         setFiles([]);
         setStatus('idle');
         setJobId(null);
+        setFileId(null);
         setProgress(0);
         setPreviewUrl(null);
         setShowPreview(false);
@@ -636,8 +639,8 @@ export default function ConvertPage() {
                 <ShareModal
                     isOpen={isShareOpen}
                     onClose={() => setIsShareOpen(false)}
-                    fileId={jobId}
-                    fileType="temp"
+                    fileId={fileId || jobId || ""}
+                    fileType={fileId ? "library" : "temp"}
                 />
             )}
         </div>

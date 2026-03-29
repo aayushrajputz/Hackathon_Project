@@ -69,18 +69,18 @@ func main() {
 	}
 	notificationService := services.NewNotificationService(mongoClient) // Correct signature
 	userService := services.NewUserService(mongoClient)
-	conversionService, err := services.NewConversionService(4) // Correct signature
+	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
+	conversionService, err := services.NewConversionService(4, storageService)
 	if err != nil {
 		log.Printf("Warning: Conversion service not available: %v", err)
 	}
 
 	// Handlers
-	authHandler := handlers.NewAuthHandler(userService, firebaseClient) // Assuming firebaseClient is authClient
-	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
+	authHandler := handlers.NewAuthHandler(userService, firebaseClient)                                // Assuming firebaseClient is authClient
 	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, userService, mongoClient) // Original corePDFHandler
 	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService)                          // Original aiHandler
 	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService)
-	conversionHandler := handlers.NewConversionHandler(conversionService) // Original conversionHandler
+	conversionHandler := handlers.NewConversionHandler(conversionService, storageService) // Original conversionHandler
 	paymentHandler := handlers.NewPaymentHandler(cfg, userService, notificationService)
 
 	// Original handlers that were not explicitly in the provided snippet but are needed

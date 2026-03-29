@@ -20,11 +20,19 @@ export const api = axios.create({
 });
 
 // Add auth token to requests
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('authToken');
+        const { getIdToken } = await import('./firebase');
+        const token = await getIdToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            localStorage.setItem('authToken', token);
+        } else {
+            // If no firebase token, try fallback to localStorage (for guest/persistence)
+            const savedToken = localStorage.getItem('authToken');
+            if (savedToken) {
+                config.headers.Authorization = `Bearer ${savedToken}`;
+            }
         }
     }
     return config;

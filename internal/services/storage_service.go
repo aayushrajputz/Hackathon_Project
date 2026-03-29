@@ -10,6 +10,7 @@ import (
 	"brainy-pdf/internal/models"
 	minioPkg "brainy-pdf/pkg/minio"
 	"brainy-pdf/pkg/mongodb"
+
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -53,26 +54,26 @@ type UploadResult struct {
 func (s *StorageService) UploadFile(ctx context.Context, userID, originalName, contentType string, reader io.Reader, size int64, isTemporary bool) (*UploadResult, error) {
 	// Generate unique filename
 	uniqueFilename := minioPkg.GenerateUniqueFilename(originalName)
-	
+
 	// Determine bucket and path
 	var bucket, objectPath string
 	var expiresAt *time.Time
-	
-    if isTemporary || userID == "" {
+
+	if isTemporary || userID == "" {
 		bucket = s.minioClient.GetBucketTemp()
 		sessionID := uuid.New().String()
 		objectPath = fmt.Sprintf("%s/%s", sessionID, uniqueFilename)
 		exp := time.Now().Add(s.tempTTL)
 		expiresAt = &exp
 	} else {
-        // Enforce storage limit for authenticated users
-        ok, err := s.userService.CheckStorageLimit(ctx, userID, size)
-        if err != nil {
-            return nil, fmt.Errorf("failed to check storage limit: %w", err)
-        }
-        if !ok {
-            return nil, fmt.Errorf("storage limit exceeded. Please upgrade your plan")
-        }
+		// Enforce storage limit for authenticated users
+		ok, err := s.userService.CheckStorageLimit(ctx, userID, size)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check storage limit: %w", err)
+		}
+		if !ok {
+			return nil, fmt.Errorf("storage limit exceeded. Please upgrade your plan")
+		}
 
 		bucket = s.minioClient.GetBucketUserFiles()
 		objectPath = fmt.Sprintf("%s/library/%s", userID, uniqueFilename)
@@ -125,15 +126,15 @@ func (s *StorageService) UploadFile(ctx context.Context, userID, originalName, c
 		return nil, fmt.Errorf("failed to create document record: %w", err)
 	}
 
-    // Generate download URL
+	// Generate download URL
 	url, _ := s.minioClient.GetPresignedURL(ctx, bucket, objectPath, 1*time.Hour)
 
-    if userID != "" && !doc.IsTemporary {
-        // Update storage usage
-        if err := s.userService.UpdateStorageUsed(ctx, userID, size); err != nil {
-             fmt.Printf("Failed to update storage usage for user %s: %v\n", userID, err)
-        }
-    }
+	if userID != "" && !doc.IsTemporary {
+		// Update storage usage
+		if err := s.userService.UpdateStorageUsed(ctx, userID, size); err != nil {
+			fmt.Printf("Failed to update storage usage for user %s: %v\n", userID, err)
+		}
+	}
 
 	return &UploadResult{
 		FileID:      doc.ID.Hex(),
@@ -147,16 +148,16 @@ func (s *StorageService) UploadFile(ctx context.Context, userID, originalName, c
 	}, nil
 }
 
-// UploadProcessedFile uploads a processed file (result of PDF operation)
-func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, originalName string, data []byte, sourceDocID string) (*UploadResult, error) {
+// UploadProcessedFile uploads a processed file (result of PDF operation or conversion)
+func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, originalName, contentType string, data []byte, sourceDocID string) (*UploadResult, error) {
 	// Determine if user is authenticated
 	isTemporary := userID == ""
-	
+
 	uniqueFilename := minioPkg.GenerateUniqueFilename(originalName)
-	
+
 	var bucket, objectPath string
 	var expiresAt *time.Time
-	
+
 	if isTemporary {
 		bucket = s.minioClient.GetBucketTemp()
 		sessionID := uuid.New().String()
@@ -179,14 +180,16 @@ func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, origin
 	}
 
 	// Upload to MinIO
-	if _, err := s.minioClient.UploadBytes(ctx, bucket, objectPath, data, "application/pdf"); err != nil {
+	if _, err := s.minioClient.UploadBytes(ctx, bucket, objectPath, data, contentType); err != nil {
 		return nil, fmt.Errorf("failed to upload processed file: %w", err)
 	}
 
-	// Get page count
+	// Get page count (only for PDF)
 	var metadata models.DocumentMetadata
-	if pageCount, err := s.pdfService.GetPageCount(data); err == nil {
-		metadata.PageCount = pageCount
+	if contentType == "application/pdf" {
+		if pageCount, err := s.pdfService.GetPageCount(data); err == nil {
+			metadata.PageCount = pageCount
+		}
 	}
 
 	// Create document record
@@ -194,7 +197,7 @@ func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, origin
 		ID:           primitive.NewObjectID(),
 		Filename:     uniqueFilename,
 		OriginalName: originalName,
-		MimeType:     "application/pdf",
+		MimeType:     contentType,
 		Size:         int64(len(data)),
 		MinIOPath:    fmt.Sprintf("%s/%s", bucket, objectPath),
 		Metadata:     metadata,
@@ -219,11 +222,11 @@ func (s *StorageService) UploadProcessedFile(ctx context.Context, userID, origin
 
 	url, _ := s.minioClient.GetPresignedURL(ctx, bucket, objectPath, 1*time.Hour)
 
-    if !isTemporary {
-        if err := s.userService.UpdateStorageUsed(ctx, userID, int64(len(data))); err != nil {
-              fmt.Printf("Failed to update storage usage for user %s: %v\n", userID, err)
-        }
-    }
+	if !isTemporary {
+		if err := s.userService.UpdateStorageUsed(ctx, userID, int64(len(data))); err != nil {
+			fmt.Printf("Failed to update storage usage for user %s: %v\n", userID, err)
+		}
+	}
 
 	return &UploadResult{
 		FileID:      doc.ID.Hex(),
@@ -252,7 +255,7 @@ func (s *StorageService) GetFile(ctx context.Context, fileID string) (*models.Do
 
 	// Parse MinIO path
 	bucket, objectPath := parseMinIOPath(doc.MinIOPath)
-	
+
 	data, err := s.minioClient.DownloadFile(ctx, bucket, objectPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to download file: %w", err)
@@ -312,10 +315,10 @@ func (s *StorageService) DeleteFile(ctx context.Context, fileID, userID string) 
 		return fmt.Errorf("failed to delete document record: %w", err)
 	}
 
-    // Update storage usage (decrement)
-    if userID != "" {
-        s.userService.UpdateStorageUsed(ctx, userID, -doc.Size)
-    }
+	// Update storage usage (decrement)
+	if userID != "" {
+		s.userService.UpdateStorageUsed(ctx, userID, -doc.Size)
+	}
 
 	return nil
 }

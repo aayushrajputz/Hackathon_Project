@@ -145,8 +145,9 @@ func (h *CorePDFHandler) MergePDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result.Data,
 		"application/pdf",
+		result.Data,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "merge", inputFileNames, "", "error", "Failed to upload result", 0, startTime)
@@ -275,8 +276,9 @@ func (h *CorePDFHandler) SplitPDF(c *gin.Context) {
 			c.Request.Context(),
 			userID,
 			outputFilename,
-			splitData,
 			"application/pdf",
+			splitData,
+			"",
 		)
 		if err != nil {
 			continue // Skip failed uploads, return partial results
@@ -404,8 +406,9 @@ func (h *CorePDFHandler) RotatePDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result.Data,
 		"application/pdf",
+		result.Data,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "rotate", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -503,8 +506,9 @@ func (h *CorePDFHandler) CompressPDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result.Data,
 		"application/pdf",
+		result.Data,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "compress", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -614,8 +618,9 @@ func (h *CorePDFHandler) CropPDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "crop", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -720,8 +725,9 @@ func (h *CorePDFHandler) WatermarkPDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "watermark", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -820,8 +826,9 @@ func (h *CorePDFHandler) PageNumbersPDF(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "page-numbers", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -978,8 +985,9 @@ func (h *CorePDFHandler) ReorderPages(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "reorder", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -1077,8 +1085,9 @@ func (h *CorePDFHandler) RemovePages(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "remove", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -1218,8 +1227,9 @@ func (h *CorePDFHandler) ExtractPages(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		outputFilename,
-		result,
 		"application/pdf",
+		result,
+		"",
 	)
 	if err != nil {
 		h.logOperation(userID, "extract", []string{header.Filename}, "", "error", "Failed to upload result", 0, startTime)
@@ -1292,7 +1302,7 @@ func (h *CorePDFHandler) DrawTextPDF(c *gin.Context) {
 	}
 
 	outputFilename := "custom_" + header.Filename
-	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, result, "application/pdf")
+	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, "application/pdf", result, "")
 	if err != nil {
 		utils.InternalServerError(c, "Failed to save file")
 		return
@@ -1344,7 +1354,7 @@ func (h *CorePDFHandler) AddBadgePDF(c *gin.Context) {
 	}
 
 	outputFilename := "badged_" + header.Filename
-	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, result, "application/pdf")
+	uploadResult, err := h.storageService.UploadProcessedFile(c.Request.Context(), userID, outputFilename, "application/pdf", result, "")
 	if err != nil {
 		utils.InternalServerError(c, "Failed to save file")
 		return

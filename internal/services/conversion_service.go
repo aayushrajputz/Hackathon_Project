@@ -28,6 +28,7 @@ const (
 
 // ConversionJob represents a document conversion task
 type ConversionJob struct {
+	UserID         string    `json:"userId,omitempty"`
 	ID             string    `json:"id"`
 	Status         JobStatus `json:"status"`
 	InputFiles     []string  `json:"-"` // temp file paths
@@ -35,6 +36,7 @@ type ConversionJob struct {
 	OutputFormat   string    `json:"outputFormat"`
 	ResultPath     string    `json:"-"` // path to result file or ZIP
 	ResultFilename string    `json:"resultFilename"`
+	FileID         string    `json:"fileId,omitempty"` // ID in StorageService/documents
 	Progress       int       `json:"progress"`
 	ProcessedFiles int       `json:"processedFiles"`
 	TotalFiles     int       `json:"totalFiles"`
@@ -45,18 +47,19 @@ type ConversionJob struct {
 
 // ConversionService handles document conversion using LibreOffice
 type ConversionService struct {
-	jobs       sync.Map
-	jobQueue   chan string
-	workerPool int
-	tempDir    string
-	outputDir  string
-	wg         sync.WaitGroup
-	ctx        context.Context
-	cancel     context.CancelFunc
+	storageService *StorageService
+	jobs           sync.Map
+	jobQueue       chan string
+	workerPool     int
+	tempDir        string
+	outputDir      string
+	wg             sync.WaitGroup
+	ctx            context.Context
+	cancel         context.CancelFunc
 }
 
 // NewConversionService creates a new conversion service
-func NewConversionService(workerCount int) (*ConversionService, error) {
+func NewConversionService(workerCount int, storageService *StorageService) (*ConversionService, error) {
 	tempDir := filepath.Join(os.TempDir(), "brainy-pdf-convert")
 	outputDir := filepath.Join(tempDir, "output")
 
@@ -97,11 +100,12 @@ func (s *ConversionService) Close() {
 }
 
 // SubmitJob creates a new conversion job and returns the job ID
-func (s *ConversionService) SubmitJob(inputFiles, originalNames []string, outputFormat string) (string, error) {
+func (s *ConversionService) SubmitJob(userID string, inputFiles, originalNames []string, outputFormat string) (string, error) {
 	jobID := uuid.New().String()
 
 	job := &ConversionJob{
 		ID:            jobID,
+		UserID:        userID,
 		Status:        JobStatusQueued,
 		InputFiles:    inputFiles,
 		OriginalNames: originalNames,
@@ -234,6 +238,30 @@ func (s *ConversionService) processJob(jobID string) {
 	job.Status = JobStatusCompleted
 	job.Progress = 100
 	job.CompletedAt = time.Now()
+
+	// Upload to StorageService for centralized access/sharing
+	if s.storageService != nil {
+		data, err := os.ReadFile(job.ResultPath)
+		if err == nil {
+			contentType := "application/pdf"
+			if job.OutputFormat == "docx" {
+				contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+			} else if job.OutputFormat == "odt" {
+				contentType = "application/vnd.oasis.opendocument.text"
+			} else if strings.HasSuffix(job.ResultPath, ".zip") {
+				contentType = "application/zip"
+			}
+
+			uploadResult, err := s.storageService.UploadProcessedFile(context.Background(), job.UserID, job.ResultFilename, contentType, data, "")
+			if err == nil {
+				job.FileID = uploadResult.FileID
+				fmt.Printf("[Conversion] Job %s: Uploaded result to storage as %s\n", jobID, uploadResult.FileID)
+			} else {
+				fmt.Printf("[Conversion] Job %s: Failed to upload result: %v\n", jobID, err)
+			}
+		}
+	}
+
 	s.jobs.Store(jobID, job)
 
 	fmt.Printf("[Conversion] Job %s completed: %s\n", jobID, job.ResultFilename)
@@ -337,11 +365,11 @@ func (s *ConversionService) findSofficePath() string {
 				return strings.TrimSpace(lines[0])
 			}
 		}
-		
+
 		// Try looking in Program Files dynamically
 		programFiles := os.Getenv("ProgramFiles")
 		programFilesx86 := os.Getenv("ProgramFiles(x86)")
-		
+
 		dirs := []string{programFiles, programFilesx86}
 		for _, dir := range dirs {
 			if dir == "" {

@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"brainy-pdf/internal/middleware"
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
 
@@ -18,17 +20,19 @@ import (
 // ConversionHandler handles document conversion endpoints
 type ConversionHandler struct {
 	conversionService *services.ConversionService
-	maxFileSize       int64  // in bytes
+	storageService    *services.StorageService
+	maxFileSize       int64 // in bytes
 	tempDir           string
 }
 
 // NewConversionHandler creates a new conversion handler
-func NewConversionHandler(conversionService *services.ConversionService) *ConversionHandler {
+func NewConversionHandler(conversionService *services.ConversionService, storageService *services.StorageService) *ConversionHandler {
 	tempDir := filepath.Join(os.TempDir(), "brainy-pdf-convert", "uploads")
 	os.MkdirAll(tempDir, 0755)
 
 	return &ConversionHandler{
 		conversionService: conversionService,
+		storageService:    storageService,
 		maxFileSize:       50 * 1024 * 1024, // 50MB per file
 		tempDir:           tempDir,
 	}
@@ -49,6 +53,9 @@ var allowedInputTypes = map[string]string{
 // Convert handles POST /api/v1/convert
 // Accepts multiple files and output format, returns jobId
 func (h *ConversionHandler) Convert(c *gin.Context) {
+	startTime := time.Now()
+	userID, _ := middleware.GetUserID(c)
+
 	outputFormat := c.DefaultPostForm("outputFormat", "pdf")
 	outputFormat = strings.ToLower(strings.TrimSpace(outputFormat))
 
@@ -90,7 +97,7 @@ func (h *ConversionHandler) Convert(c *gin.Context) {
 			return
 		}
 
-		jobID, err := h.conversionService.SubmitJob([]string{tempPath}, []string{originalName}, outputFormat)
+		jobID, err := h.conversionService.SubmitJob(userID, []string{tempPath}, []string{originalName}, outputFormat)
 		if err != nil {
 			os.Remove(tempPath)
 			utils.InternalServerError(c, "Failed to queue job: "+err.Error())
@@ -137,7 +144,7 @@ func (h *ConversionHandler) Convert(c *gin.Context) {
 	}
 
 	// Submit job
-	jobID, err := h.conversionService.SubmitJob(tempPaths, originalNames, outputFormat)
+	jobID, err := h.conversionService.SubmitJob(userID, tempPaths, originalNames, outputFormat)
 	if err != nil {
 		h.cleanupFiles(tempPaths)
 		utils.InternalServerError(c, "Failed to queue job: "+err.Error())
@@ -226,6 +233,7 @@ func (h *ConversionHandler) Status(c *gin.Context) {
 		"error":          job.Error,
 		"createdAt":      job.CreatedAt,
 		"completedAt":    job.CompletedAt,
+		"fileId":         job.FileID,
 	})
 }
 
@@ -295,11 +303,12 @@ func (h *ConversionHandler) Formats(c *gin.Context) {
 }
 
 // RegisterRoutes registers conversion routes
-func (h *ConversionHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *ConversionHandler) RegisterRoutes(r *gin.RouterGroup, optionalAuthMiddleware gin.HandlerFunc) {
 	convert := r.Group("/convert")
-	convert.Use(authMiddleware)
+	convert.Use(optionalAuthMiddleware)
 	{
 		convert.POST("", h.Convert)
+		convert.POST("/", h.Convert) // Handle both /convert and /convert/
 		convert.GET("/status/:jobId", h.Status)
 		convert.GET("/download/:jobId", h.Download)
 		convert.GET("/formats", h.Formats)
