@@ -13,6 +13,7 @@ import (
 	"brainy-pdf/internal/middleware"
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -124,6 +125,7 @@ func (h *PDFHandler) Merge(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"merged.pdf",
+		"application/pdf",
 		result.Data,
 		"",
 	)
@@ -186,6 +188,7 @@ func (h *PDFHandler) Split(c *gin.Context) {
 			c.Request.Context(),
 			userID,
 			fmt.Sprintf("%s_part%d.pdf", baseName, i+1),
+			"application/pdf",
 			splitData,
 			"",
 		)
@@ -205,7 +208,6 @@ func (h *PDFHandler) Split(c *gin.Context) {
 		"total": len(urls),
 	})
 }
-
 
 // Rotate handles POST /api/v1/pdf/rotate
 func (h *PDFHandler) Rotate(c *gin.Context) {
@@ -249,6 +251,7 @@ func (h *PDFHandler) Rotate(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"rotated.pdf",
+		"application/pdf",
 		result.Data,
 		"",
 	)
@@ -306,6 +309,7 @@ func (h *PDFHandler) Compress(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"compressed.pdf",
+		"application/pdf",
 		result.Data,
 		"",
 	)
@@ -362,6 +366,7 @@ func (h *PDFHandler) ExtractPages(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"extracted.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -414,6 +419,7 @@ func (h *PDFHandler) RemovePages(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"modified.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -483,6 +489,7 @@ func (h *PDFHandler) Organize(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"organized.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -548,6 +555,7 @@ func (h *PDFHandler) Watermark(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"watermarked.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -603,6 +611,7 @@ func (h *PDFHandler) PageNumbers(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"numbered.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -659,6 +668,7 @@ func (h *PDFHandler) Crop(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		"cropped.pdf",
+		"application/pdf",
 		result,
 		"",
 	)
@@ -709,7 +719,7 @@ func (h *PDFHandler) GetInfo(c *gin.Context) {
 		return
 	}
 	log.Printf("[PDF] Detected %d pages", pageCount)
-	
+
 	utils.Success(c, gin.H{
 		"pageCount": pageCount,
 		"size":      len(data),

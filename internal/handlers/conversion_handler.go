@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"brainy-pdf/internal/middleware"
 	"brainy-pdf/internal/services"
@@ -53,7 +52,6 @@ var allowedInputTypes = map[string]string{
 // Convert handles POST /api/v1/convert
 // Accepts multiple files and output format, returns jobId
 func (h *ConversionHandler) Convert(c *gin.Context) {
-	startTime := time.Now()
 	userID, _ := middleware.GetUserID(c)
 
 	outputFormat := c.DefaultPostForm("outputFormat", "pdf")
