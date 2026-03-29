@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -16,16 +17,16 @@ import (
 	"brainy-pdf/pkg/firebase"
 	minioPkg "brainy-pdf/pkg/minio"
 	"brainy-pdf/pkg/mongodb"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// Load configuration
 	cfg := config.Load()
-	
+
 	log.Printf("🚀 Starting Server...")
 	log.Printf("DEBUG: Loaded CORS Allowed Origins: %v", cfg.CORSAllowedOrigins)
-
 
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
@@ -58,7 +59,7 @@ func main() {
 	}
 
 	// Services
-	pdfService, err := services.NewPDFService()
+	pdfService, err := services.NewPDFService(cfg.MaxWorkers)
 	if err != nil {
 		log.Fatalf("Failed to create PDF service: %v", err)
 	}
@@ -77,11 +78,11 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userService, firebaseClient) // Assuming firebaseClient is authClient
 	storageService := services.NewStorageService(minioClient, mongoClient, pdfService, userService, cfg.TempFileTTLHours)
 	corePDFHandler := handlers.NewCorePDFHandler(pdfService, storageService, userService, mongoClient) // Original corePDFHandler
-	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService) // Original aiHandler
+	aiHandler := handlers.NewAIHandler(aiService, pdfService, storageService)                          // Original aiHandler
 	shareHandler := handlers.NewShareHandler(minioClient, mongoClient.MongoClient(), cfg.MongoDBDatabase, cfg.ServerHost, notificationService, conversionService)
 	conversionHandler := handlers.NewConversionHandler(conversionService) // Original conversionHandler
 	paymentHandler := handlers.NewPaymentHandler(cfg, userService, notificationService)
-	
+
 	// Original handlers that were not explicitly in the provided snippet but are needed
 	pdfHandler := handlers.NewPDFHandler(pdfService, storageService, userService)
 	storageHandler := handlers.NewStorageHandler(storageService)
@@ -89,9 +90,11 @@ func main() {
 	notificationHandler := handlers.NewNotificationHandler(notificationService, userService)
 	adminHandler := handlers.NewAdminHandler(mongoClient, userService)
 
-
 	// Create Gin router
 	router := gin.Default()
+
+	// Enforce memory limit for multipart forms (default is 8MB, we want our config limit)
+	router.MaxMultipartMemory = int64(cfg.MaxBodySizeMB) << 20 // Convert MB to Bytes
 
 	// Add middleware
 	router.Use(middleware.CORSMiddleware(cfg.CORSAllowedOrigins))
@@ -143,12 +146,18 @@ func main() {
 	// API routes (Phase 3 - /api/pdf/*)
 	apiGroup := router.Group("/api")
 	apiGroup.Use(optionalAuthMiddleware)
+	// Apply PDF timeout middleware to all operations in this group
+	if cfg.PDFTimeoutSec > 0 {
+		apiGroup.Use(middleware.TimeoutMiddleware(time.Duration(cfg.PDFTimeoutSec) * time.Second))
+	}
 	{
 		corePDFHandler.RegisterRoutes(apiGroup)
 	}
 
 	// Start cleanup goroutine for expired files
 	go startCleanupJob(storageService)
+	// Start cleanup goroutine for orphaned local temporary operations
+	go startTempCleanupJob()
 
 	// Create server
 	server := &http.Server{
@@ -200,6 +209,47 @@ func startCleanupJob(storageService *services.StorageService) {
 			log.Printf("Cleanup job error: %v", err)
 		} else if deleted > 0 {
 			log.Printf("Cleanup job: removed %d expired files", deleted)
+		}
+	}
+}
+
+// startTempCleanupJob runs periodic cleanup of orphaned files in the local temp directory
+func startTempCleanupJob() {
+	ticker := time.NewTicker(1 * time.Hour) // Run every hour
+	defer ticker.Stop()
+
+	// The base temp folder used by PDFService
+	tempDir := filepath.Join(os.TempDir(), "brainy-pdf-ops")
+
+	for range ticker.C {
+		log.Printf("🧹 Sweeping orphaned temp files in: %s", tempDir)
+
+		// Read all items in the base temp dir
+		entries, err := os.ReadDir(tempDir)
+		if err != nil {
+			continue
+		}
+
+		now := time.Now()
+		var deleted int
+
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			// If file/folder is older than 1 hour, wipe it
+			if now.Sub(info.ModTime()) > 1*time.Hour {
+				fullPath := filepath.Join(tempDir, entry.Name())
+				if err := os.RemoveAll(fullPath); err == nil {
+					deleted++
+				}
+			}
+		}
+
+		if deleted > 0 {
+			log.Printf("🧹 Sweeper removed %d orphaned temp items", deleted)
 		}
 	}
 }

@@ -20,15 +20,15 @@ type Config struct {
 	MongoDBDatabase string
 
 	// MinIO
-	MinIOEndpoint       string
-	MinIOAccessKey      string
-	MinIOSecretKey      string
-	MinIOUseSSL         bool
-	MinIOBucketTemp     string
+	MinIOEndpoint        string
+	MinIOAccessKey       string
+	MinIOSecretKey       string
+	MinIOUseSSL          bool
+	MinIOBucketTemp      string
 	MinIOBucketUserFiles string
 
 	// Firebase
-	FirebaseProjectID      string
+	FirebaseProjectID       string
 	FirebaseCredentialsFile string
 
 	// OpenRouter AI
@@ -46,6 +46,11 @@ type Config struct {
 	// Razorpay
 	RazorpayKeyID     string
 	RazorpayKeySecret string
+
+	// Scalability
+	MaxWorkers    int
+	MaxBodySizeMB int
+	PDFTimeoutSec int
 }
 
 // Global config instance
@@ -112,6 +117,11 @@ func Load() *Config {
 		log.Println("Warning: SERVER_HOST points to backend port 8080. Redirecting to 3000 for correct frontend sharing links.")
 		config.ServerHost = strings.Replace(config.ServerHost, ":8080", ":3000", 1)
 	}
+
+	// Scalability settings
+	config.MaxWorkers = getEnvInt("MAX_WORKERS", 4)
+	config.MaxBodySizeMB = getEnvInt("MAX_BODY_SIZE_MB", 100)
+	config.PDFTimeoutSec = getEnvInt("PDF_TIMEOUT_SEC", 120)
 
 	AppConfig = config
 	return config

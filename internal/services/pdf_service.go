@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/ledongthuc/pdf"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
@@ -18,11 +18,25 @@ import (
 
 // PDFService handles all PDF operations using pdfcpu
 type PDFService struct {
-	tempDir string
+	tempDir    string
+	workerPool *WorkerPool
 }
 
 func (s *PDFService) ensureTempDir() error {
-    return os.MkdirAll(s.tempDir, 0755)
+	return os.MkdirAll(s.tempDir, 0755)
+}
+
+// createRequestTempDir creates a unique temp subdirectory for a single request.
+// Caller MUST defer os.RemoveAll on the returned path.
+func (s *PDFService) createRequestTempDir(prefix string) (string, error) {
+	if err := s.ensureTempDir(); err != nil {
+		return "", fmt.Errorf("failed to create base temp dir: %w", err)
+	}
+	dir := filepath.Join(s.tempDir, fmt.Sprintf("%s_%s", prefix, uuid.New().String()))
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create request temp dir: %w", err)
+	}
+	return dir, nil
 }
 
 // Result types
@@ -69,30 +83,36 @@ type CropOptions struct {
 }
 
 type DrawTextOptions struct {
-	Text      string
-	X         float64
-	Y         float64
-	FontSize  float64
-	Color     string // Hex color like #FF0000
+	Text       string
+	X          float64
+	Y          float64
+	FontSize   float64
+	Color      string // Hex color like #FF0000
 	FontFamily string
 }
 
 type BadgeOptions struct {
-	Type     string // "gold", "silver", "verified"
-	X        float64
-	Y        float64
-	Scale    float64
+	Type  string // "gold", "silver", "verified"
+	X     float64
+	Y     float64
+	Scale float64
 }
 
-// NewPDFService creates a new PDF service
-func NewPDFService() (*PDFService, error) {
+// NewPDFService creates a new PDF service with a concurrency-limited worker pool.
+func NewPDFService(maxWorkers int) (*PDFService, error) {
 	tempDir := filepath.Join(os.TempDir(), "brainy-pdf-ops")
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return nil, err
 	}
 	return &PDFService{
-		tempDir: tempDir,
+		tempDir:    tempDir,
+		workerPool: NewWorkerPool(maxWorkers),
 	}, nil
+}
+
+// GetWorkerPool returns the worker pool for monitoring.
+func (s *PDFService) GetWorkerPool() *WorkerPool {
+	return s.workerPool
 }
 
 func (s *PDFService) getConfig() *model.Configuration {
@@ -121,14 +141,14 @@ func (s *PDFService) GetPageCount(data []byte) (int, error) {
 		return r.NumPage(), nil
 	}
 
-    // Fallback 3: Heuristic count of /Type /Page
-    // This is not 100% accurate but better than 0 for display
-    count1 := bytes.Count(data, []byte("/Type /Page"))
-    count2 := bytes.Count(data, []byte("/Type/Page"))
-    estimated := count1 + count2
-    if estimated > 0 {
-        return estimated, nil
-    }
+	// Fallback 3: Heuristic count of /Type /Page
+	// This is not 100% accurate but better than 0 for display
+	count1 := bytes.Count(data, []byte("/Type /Page"))
+	count2 := bytes.Count(data, []byte("/Type/Page"))
+	estimated := count1 + count2
+	if estimated > 0 {
+		return estimated, nil
+	}
 
 	return 0, fmt.Errorf("failed to count pages with all methods: %w", err)
 }
@@ -139,11 +159,11 @@ func (s *PDFService) GetInfo(data []byte) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	info := make(map[string]string)
 	info["pageCount"] = strconv.Itoa(ctx.PageCount)
 	info["version"] = ctx.HeaderVersion.String()
-	
+
 	if ctx.Title != "" {
 		info["title"] = ctx.Title
 	}
@@ -153,7 +173,7 @@ func (s *PDFService) GetInfo(data []byte) (map[string]string, error) {
 	if ctx.Subject != "" {
 		info["subject"] = ctx.Subject
 	}
-	
+
 	return info, nil
 }
 
@@ -163,24 +183,31 @@ func (s *PDFService) Merge(ctx context.Context, pdfData [][]byte) (*MergeResult,
 		return nil, fmt.Errorf("at least 2 files required for merge")
 	}
 
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	// Acquire worker slot (blocks if all workers busy)
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
+
+	// Create unique temp dir for this request
+	tmpDir, err := s.createRequestTempDir("merge")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
 
 	// Create temp files for each PDF
 	tempFiles := make([]string, len(pdfData))
 	for i, data := range pdfData {
-		tempFile := filepath.Join(s.tempDir, fmt.Sprintf("merge_input_%d_%d.pdf", time.Now().UnixNano(), i))
+		tempFile := filepath.Join(tmpDir, fmt.Sprintf("input_%d.pdf", i))
 		if err := os.WriteFile(tempFile, data, 0644); err != nil {
 			return nil, err
 		}
 		tempFiles[i] = tempFile
-		defer os.Remove(tempFile)
 	}
 
 	// Output file
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("merged_%d.pdf", time.Now().UnixNano()))
-	defer os.Remove(outputFile)
+	outputFile := filepath.Join(tmpDir, "merged.pdf")
 
 	// Merge using pdfcpu
 	if err := api.MergeCreateFile(tempFiles, outputFile, false, s.getConfig()); err != nil {
@@ -203,23 +230,28 @@ func (s *PDFService) Merge(ctx context.Context, pdfData [][]byte) (*MergeResult,
 
 // Split splits a PDF based on page specification
 func (s *PDFService) Split(ctx context.Context, data []byte, pages string) (*SplitResult, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
+
+	tmpDir, err := s.createRequestTempDir("split")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
 
 	// Create temp input file
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("split_input_%d.pdf", time.Now().UnixNano()))
+	inputFile := filepath.Join(tmpDir, "input.pdf")
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
 
 	// Create temp output directory
-	outputDir := filepath.Join(s.tempDir, fmt.Sprintf("split_output_%d", time.Now().UnixNano()))
+	outputDir := filepath.Join(tmpDir, "output")
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(outputDir)
 
 	// Split using pdfcpu
 	if err := api.SplitFile(inputFile, outputDir, 1, s.getConfig()); err != nil {
@@ -248,19 +280,20 @@ func (s *PDFService) Split(ctx context.Context, data []byte, pages string) (*Spl
 
 // Rotate rotates pages in a PDF
 func (s *PDFService) Rotate(ctx context.Context, data []byte, pages string, angle int) (*RotateResult, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
-
-	// Create temp files
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("rotate_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("rotate_output_%d.pdf", time.Now().UnixNano()))
-	
-	if err := os.WriteFile(inputFile, data, 0644); err != nil {
+	if err := s.workerPool.Acquire(ctx); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
+	defer s.workerPool.Release()
+
+	tmpDir, err := s.createRequestTempDir("rotate")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create temp files
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
 
 	// Parse pages (nil means all pages)
 	var pageSelection []string
@@ -289,21 +322,26 @@ func (s *PDFService) Rotate(ctx context.Context, data []byte, pages string, angl
 
 // Compress optimizes a PDF
 func (s *PDFService) Compress(ctx context.Context, data []byte, quality string) (*CompressResult, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
+
+	tmpDir, err := s.createRequestTempDir("compress")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
 
 	sizeBefore := int64(len(data))
 
 	// Create temp files
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("compress_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("compress_output_%d.pdf", time.Now().UnixNano()))
-	
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Optimize using pdfcpu
 	if err := api.OptimizeFile(inputFile, outputFile, s.getConfig()); err != nil {
@@ -329,18 +367,23 @@ func (s *PDFService) Compress(ctx context.Context, data []byte, quality string) 
 
 // ExtractPages extracts specific pages from a PDF
 func (s *PDFService) ExtractPages(ctx context.Context, data []byte, pages string) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("extract_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("extract_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("extract")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Extract using pdfcpu
 	if err := api.ExtractPagesFile(inputFile, outputFile, []string{pages}, s.getConfig()); err != nil {
@@ -352,18 +395,23 @@ func (s *PDFService) ExtractPages(ctx context.Context, data []byte, pages string
 
 // RemovePages removes specific pages from a PDF
 func (s *PDFService) RemovePages(ctx context.Context, data []byte, pages string) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("remove_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("remove_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("remove")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Remove using pdfcpu
 	if err := api.RemovePagesFile(inputFile, outputFile, []string{pages}, s.getConfig()); err != nil {
@@ -375,18 +423,23 @@ func (s *PDFService) RemovePages(ctx context.Context, data []byte, pages string)
 
 // OrganizePages reorders pages in a PDF
 func (s *PDFService) OrganizePages(ctx context.Context, data []byte, order []int) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("organize_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("organize_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("organize")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Convert order to string format for pdfcpu
 	var orderStr []string
@@ -404,18 +457,23 @@ func (s *PDFService) OrganizePages(ctx context.Context, data []byte, order []int
 
 // AddWatermark adds a text watermark to a PDF
 func (s *PDFService) AddWatermark(ctx context.Context, data []byte, opts WatermarkOptions) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("watermark_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("watermark_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("watermark")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Build watermark description
 	// Format: "font:Helvetica, points:48, color:#808080, opacity:0.3, rotation:45"
@@ -427,7 +485,7 @@ func (s *PDFService) AddWatermark(ctx context.Context, data []byte, opts Waterma
 	if opacity == 0 {
 		opacity = 0.3
 	}
-	
+
 	desc := fmt.Sprintf("font:Helvetica, points:%d, color:#808080, opacity:%.2f, rotation:45, scale:1.0 rel",
 		int(fontSize), opacity)
 
@@ -446,18 +504,23 @@ func (s *PDFService) AddWatermark(ctx context.Context, data []byte, opts Waterma
 
 // AddPageNumbers adds page numbers to a PDF
 func (s *PDFService) AddPageNumbers(ctx context.Context, data []byte, opts PageNumberOptions) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("pagenums_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("pagenums_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("pagenums")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Determine position
 	pos := "bc" // bottom center as default
@@ -503,18 +566,23 @@ func (s *PDFService) Crop(ctx context.Context, data []byte, opts CropOptions) ([
 		return data, nil
 	}
 
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("crop_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("crop_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("crop")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
 	// Use Trim which removes whitespace margins
 	if err := api.TrimFile(inputFile, outputFile, nil, s.getConfig()); err != nil {
@@ -544,7 +612,7 @@ func (s *PDFService) ExtractText(ctx context.Context, data []byte) (string, erro
 		if p.V.IsNull() {
 			continue
 		}
-		
+
 		text, err := p.GetPlainText(nil)
 		if err != nil {
 			continue
@@ -565,29 +633,29 @@ func (s *PDFService) ExtractTextWithOCR(ctx context.Context, data []byte) (strin
 
 // DrawTextOnPDF adds custom text at specific coordinates using gopdf
 func (s *PDFService) DrawTextOnPDF(ctx context.Context, data []byte, opts DrawTextOptions) ([]byte, error) {
-	if err := s.ensureTempDir(); err != nil {
-		return nil, fmt.Errorf("failed to create temp dir: %w", err)
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
 	}
+	defer s.workerPool.Release()
+
+	tmpDir, err := s.createRequestTempDir("draw")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
 
 	pdfRes := gopdf.GoPdf{}
 	pdfRes.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4}) // Default fallback
 
-	// In a real implementation, we'd import the existing PDF pages.
-	// For now, let's show the logic of using gopdf to create a layer or a new doc.
-	// To truly overlay on existing PDF, we use pdfcpu's Stamp or import into gopdf.
-	
 	// Create a temporary file to work with
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("draw_input_%d.pdf", time.Now().UnixNano()))
+	inputFile := filepath.Join(tmpDir, "input.pdf")
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
 
 	// pdfcpu is better at adding text to existing PDFs without losing structure
 	// Let's use pdfcpu for the actual operation but keep the advanced options
-	
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("draw_output_%d.pdf", time.Now().UnixNano()))
-	defer os.Remove(outputFile)
+	outputFile := filepath.Join(tmpDir, "output.pdf")
 
 	// Build description
 	color := opts.Color
@@ -600,7 +668,7 @@ func (s *PDFService) DrawTextOnPDF(ctx context.Context, data []byte, opts DrawTe
 	}
 
 	// Format: "pos:abs, x:100, y:100, font:Helvetica, points:24, color:#000000"
-	desc := fmt.Sprintf("pos:abs, x:%f, y:%f, font:Helvetica, points:%d, color:%s", 
+	desc := fmt.Sprintf("pos:abs, x:%f, y:%f, font:Helvetica, points:%d, color:%s",
 		opts.X, opts.Y, int(fontSize), color)
 
 	if err := api.AddTextWatermarksFile(inputFile, outputFile, nil, true, opts.Text, desc, s.getConfig()); err != nil {
@@ -612,43 +680,48 @@ func (s *PDFService) DrawTextOnPDF(ctx context.Context, data []byte, opts DrawTe
 
 // AddBadgeOnPDF adds a graphic badge to the PDF
 func (s *PDFService) AddBadgeOnPDF(ctx context.Context, data []byte, opts BadgeOptions) ([]byte, error) {
-    if err := s.ensureTempDir(); err != nil {
-        return nil, fmt.Errorf("failed to create temp dir: %w", err)
-    }
+	if err := s.workerPool.Acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer s.workerPool.Release()
 
-	inputFile := filepath.Join(s.tempDir, fmt.Sprintf("badge_input_%d.pdf", time.Now().UnixNano()))
-	outputFile := filepath.Join(s.tempDir, fmt.Sprintf("badge_output_%d.pdf", time.Now().UnixNano()))
-	
+	tmpDir, err := s.createRequestTempDir("badge")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	inputFile := filepath.Join(tmpDir, "input.pdf")
+	outputFile := filepath.Join(tmpDir, "output.pdf")
+
 	if err := os.WriteFile(inputFile, data, 0644); err != nil {
 		return nil, err
 	}
-	defer os.Remove(inputFile)
-	defer os.Remove(outputFile)
 
-    // In a real high-end app, we'd use gopdf or imagick to overlay a PNG badge.
-    // For this prototype, we'll use a specialized stamp description.
-    
-    // We can use emoji or special characters as badges for now
-    badgeIcon := "🏆" // Gold
-    if opts.Type == "verified" {
-        badgeIcon = "✅"
-    } else if opts.Type == "silver" {
-        badgeIcon = "🥈"
-    }
-    
-    scale := opts.Scale
-    if scale == 0 {
-        scale = 1.0
-    }
+	// In a real high-end app, we'd use gopdf or imagick to overlay a PNG badge.
+	// For this prototype, we'll use a specialized stamp description.
 
-    desc := fmt.Sprintf("pos:abs, x:%f, y:%f, points:%d, scale:%.2f", 
-        opts.X, opts.Y, 48, scale)
+	// We can use emoji or special characters as badges for now
+	badgeIcon := "🏆" // Gold
+	if opts.Type == "verified" {
+		badgeIcon = "✅"
+	} else if opts.Type == "silver" {
+		badgeIcon = "🥈"
+	}
 
-    if err := api.AddTextWatermarksFile(inputFile, outputFile, nil, true, badgeIcon, desc, s.getConfig()); err != nil {
-        return data, nil
-    }
+	scale := opts.Scale
+	if scale == 0 {
+		scale = 1.0
+	}
 
-    return os.ReadFile(outputFile)
+	desc := fmt.Sprintf("pos:abs, x:%f, y:%f, points:%d, scale:%.2f",
+		opts.X, opts.Y, 48, scale)
+
+	if err := api.AddTextWatermarksFile(inputFile, outputFile, nil, true, badgeIcon, desc, s.getConfig()); err != nil {
+		return data, nil
+	}
+
+	return os.ReadFile(outputFile)
 }
 
 // IsTextReadable checks if extracted text is readable
@@ -668,4 +741,3 @@ func CleanExtractedText(text string) string {
 	}
 	return text
 }
-

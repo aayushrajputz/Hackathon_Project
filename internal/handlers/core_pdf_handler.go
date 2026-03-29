@@ -11,6 +11,7 @@ import (
 	"brainy-pdf/internal/services"
 	"brainy-pdf/internal/utils"
 	"brainy-pdf/pkg/mongodb"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,17 +27,17 @@ type CorePDFHandler struct {
 
 // OperationLog represents a logged PDF operation
 type OperationLog struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty"`
-	UserID        string             `bson:"userId,omitempty"`
-	Operation     string             `bson:"operation"`
-	InputFiles    []string           `bson:"inputFiles"`
-	OutputFileID  string             `bson:"outputFileId,omitempty"`
-	OutputFiles   []string           `bson:"outputFiles,omitempty"`
-	PageCount     int                `bson:"pageCount,omitempty"`
-	Status        string             `bson:"status"` // success, error
-	ErrorMessage  string             `bson:"errorMessage,omitempty"`
-	ProcessingMs  int64              `bson:"processingMs"`
-	CreatedAt     time.Time          `bson:"createdAt"`
+	ID           primitive.ObjectID `bson:"_id,omitempty"`
+	UserID       string             `bson:"userId,omitempty"`
+	Operation    string             `bson:"operation"`
+	InputFiles   []string           `bson:"inputFiles"`
+	OutputFileID string             `bson:"outputFileId,omitempty"`
+	OutputFiles  []string           `bson:"outputFiles,omitempty"`
+	PageCount    int                `bson:"pageCount,omitempty"`
+	Status       string             `bson:"status"` // success, error
+	ErrorMessage string             `bson:"errorMessage,omitempty"`
+	ProcessingMs int64              `bson:"processingMs"`
+	CreatedAt    time.Time          `bson:"createdAt"`
 }
 
 // NewCorePDFHandler creates a new core PDF handler
@@ -94,10 +95,11 @@ func (h *CorePDFHandler) MergePDF(c *gin.Context) {
 			return
 		}
 
-		// Validate file size (max 50MB per file)
-		if fileHeader.Size > 50*1024*1024 {
-			h.logOperation(userID, "merge", inputFileNames, "", "error", "File too large", 0, startTime)
-			utils.BadRequest(c, fmt.Sprintf("File '%s' exceeds 50MB limit", fileHeader.Filename))
+		// Validate file size using plan-based limit
+		maxSize := h.getMaxFileSize(c, userID)
+		if fileHeader.Size > maxSize {
+			h.logOperation(userID, "merge", inputFileNames, "", "error", "File too large for plan", 0, startTime)
+			utils.BadRequest(c, fmt.Sprintf("File '%s' exceeds your plan's size limit of %d MB", fileHeader.Filename, maxSize/(1024*1024)))
 			return
 		}
 
@@ -1231,14 +1233,14 @@ func (h *CorePDFHandler) ExtractPages(c *gin.Context) {
 	utils.Success(c, gin.H{
 		"success": true,
 		"data": gin.H{
-			"fileId":          uploadResult.FileID,
-			"url":             uploadResult.URL,
-			"filename":        uploadResult.Filename,
-			"pageCount":       newPageCount,
-			"originalPages":   originalPageCount,
-			"extractedPages":  pagesStr,
-			"size":            uploadResult.Size,
-			"processingMs":    time.Since(startTime).Milliseconds(),
+			"fileId":         uploadResult.FileID,
+			"url":            uploadResult.URL,
+			"filename":       uploadResult.Filename,
+			"pageCount":      newPageCount,
+			"originalPages":  originalPageCount,
+			"extractedPages": pagesStr,
+			"size":           uploadResult.Size,
+			"processingMs":   time.Since(startTime).Milliseconds(),
 		},
 	})
 }
@@ -1376,7 +1378,7 @@ func (h *CorePDFHandler) RegisterRoutes(r *gin.RouterGroup) {
 		pdf.POST("/info", h.GetPDFInfo)
 		// Phase 7: Extract pages
 		pdf.POST("/extract", h.ExtractPages)
-		
+
 		// Phase 8: Manual Tools (Premium)
 		pdf.POST("/draw-text", h.DrawTextPDF)
 		pdf.POST("/add-badge", h.AddBadgePDF)
