@@ -49,10 +49,10 @@ export default function ChatPage() {
             setMessages([
                 {
                     role: 'assistant',
-                    content: `Document **${selectedFile.name}** has been successfully ingested into the neural matrix. I'm ready to proceed with context-aware dialogue.`
+                    content: `Document **${selectedFile.name}** has been uploaded. I'm ready to answer your questions about it.`
                 }
             ]);
-            toast.success('Logical Matrix Synchronized');
+            toast.success('Document ready for chat');
         } catch (error: any) {
             toast.error('Deep scan failed');
             setFile(null);
@@ -80,10 +80,10 @@ export default function ChatPage() {
                 { role: 'assistant', content: response.data.data.answer }
             ]);
         } catch (error: any) {
-            toast.error('Signal Interruption');
+            toast.error('Connection lost');
             setMessages(prev => [
                 ...prev,
-                { role: 'assistant', content: 'Lost contact with the AI Core. Please re-send the packet.' }
+                { role: 'assistant', content: 'Lost contact with the AI. Please try sending your message again.' }
             ]);
         } finally {
             setIsChatProcessing(false);
@@ -113,8 +113,8 @@ export default function ChatPage() {
                                 <MessageCircle className="w-12 h-12 text-white" />
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none uppercase">Neural <span className="text-blue-600">Dialogue</span></h1>
-                                <p className="text-slate-500 font-bold text-lg max-w-md mx-auto leading-relaxed mt-2">Transform static document architectures into interactive conversational partners.</p>
+                                <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none uppercase">Chat with <span className="text-blue-600">PDF</span></h1>
+                                <p className="text-slate-500 font-bold text-lg max-w-md mx-auto leading-relaxed mt-2">Ask questions and get answers from your documents instantly.</p>
                             </div>
                         </div>
 
@@ -131,8 +131,8 @@ export default function ChatPage() {
                                     <Database className="w-9 h-9 text-blue-600" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Inject Data Source</h3>
-                                    <p className="text-slate-400 font-bold text-[10px] uppercase leading-relaxed tracking-tighter">Drop PDF to initialize semantic map</p>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Upload PDF</h3>
+                                    <p className="text-slate-400 font-bold text-[10px] uppercase leading-relaxed tracking-tighter">Drop your PDF here to start chatting</p>
                                 </div>
                             </div>
                         </div>
@@ -140,11 +140,11 @@ export default function ChatPage() {
                         <div className="grid grid-cols-2 gap-6 max-w-md mx-auto">
                             <div className="p-5 rounded-[2rem] bg-slate-50 border border-slate-100 space-y-2">
                                 <Sparkles className="w-5 h-5 text-blue-600 mx-auto" />
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Context Engine</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Smart Context</p>
                             </div>
                             <div className="p-5 rounded-[2rem] bg-slate-50 border border-slate-100 space-y-2">
                                 <Brain className="w-5 h-5 text-blue-600 mx-auto" />
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Logic Layer</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Processing</p>
                             </div>
                         </div>
                     </div>
@@ -168,8 +168,8 @@ export default function ChatPage() {
                         </div>
                     </div>
                     <div className="space-y-4">
-                        <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Mapping Nodes</h2>
-                        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">Vectorizing document semantic nodes for neural dialogue.</p>
+                        <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Reading File</h2>
+                        <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs">Preparing your document for chat...</p>
                     </div>
                 </motion.div>
             </div>
@@ -196,7 +196,7 @@ export default function ChatPage() {
                                 <span className="text-sm font-black text-slate-900 truncate max-w-[200px] tracking-tight">{file?.name}</span>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Matrix Active</span>
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ready to chat</span>
                                 </div>
                             </div>
                         </div>
@@ -204,7 +204,7 @@ export default function ChatPage() {
 
                     <div className="flex items-center gap-3">
                         <div className="px-5 py-2 rounded-full bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest shadow-xl">
-                            Verified Environment
+                            Secure Chat
                         </div>
                     </div>
                 </div>

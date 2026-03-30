@@ -68,12 +68,12 @@ export default function Header() {
                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter">
                         {getPageTitle()}
                     </h2>
-                    <div className="flex items-center gap-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                        <span>Systems Cloud</span>
+                    <div className="flex items-center gap-2.5 text-[10px] font-bold text-slate-400 mt-1">
+                        <span>Systems</span>
                         <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm relative">
                             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
                         </div>
-                        <span className="text-emerald-600">Operational</span>
+                        <span className="text-emerald-600 font-bold">Operational</span>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@ export default function Header() {
                     <Search className="w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="Search modules..."
+                        placeholder="Search tools..."
                         className="bg-transparent border-none focus:outline-none text-xs font-bold text-slate-900 placeholder:text-slate-400 w-32"
                     />
                     <kbd className="text-[10px] font-black tracking-widest bg-white border border-slate-200 px-1.5 py-0.5 rounded-md shadow-sm">⌘K</kbd>
@@ -120,7 +120,7 @@ export default function Header() {
                                 <p className="text-xs font-black text-slate-900 truncate max-w-[100px] tracking-tight">
                                     {user.displayName || "Professional"}
                                 </p>
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none pt-1">{user.plan || "PRO"} SPEC</p>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none pt-1">{user.plan || "PRO"} Plan</p>
                             </div>
                             <ChevronDown className={clsx(
                                 "w-4 h-4 text-slate-400 transition-transform group-hover:text-blue-600 mr-1",
@@ -141,11 +141,11 @@ export default function Header() {
                                             router.push('/profile');
                                             setShowProfileMenu(false);
                                         }}
-                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
+                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
                                     >
                                         <div className="flex items-center gap-3">
                                             <User className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
-                                            <span>Profile Matrix</span>
+                                            <span>Profile</span>
                                         </div>
                                         <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </button>
@@ -154,11 +154,11 @@ export default function Header() {
                                             router.push('/profile');
                                             setShowProfileMenu(false);
                                         }}
-                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
+                                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all group"
                                     >
                                         <div className="flex items-center gap-3">
                                             <Settings className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
-                                            <span>Global Specs</span>
+                                            <span>Settings</span>
                                         </div>
                                         <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </button>
@@ -166,10 +166,10 @@ export default function Header() {
                                 <div className="p-3 bg-slate-50/80 border-t border-slate-100">
                                     <button
                                         onClick={handleSignOut}
-                                        className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+                                        className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
                                     >
                                         <LogOut className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
-                                        <span>Secure Exit</span>
+                                        <span>Logout</span>
                                     </button>
                                 </div>
                             </div>

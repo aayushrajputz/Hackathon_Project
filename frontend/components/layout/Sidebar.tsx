@@ -113,19 +113,17 @@ export default function Sidebar() {
                             </div>
                             <div>
                                 <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none">Binary<span className="text-blue-600">PDF</span></h1>
-                                <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-1">Pro Workspace</p>
                             </div>
                         </Link>
                     </div>
 
                     <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-8 custom-scrollbar">
                         <div>
-                            <p className="px-5 mb-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Navigational</p>
                             <div className="space-y-1">
                                 <Link
                                     href="/dashboard"
                                     className={clsx(
-                                        'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-xs uppercase tracking-tight group',
+                                        'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-bold text-sm group',
                                         pathname === '/dashboard'
                                             ? 'bg-blue-50 text-blue-600'
                                             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -138,14 +136,14 @@ export default function Sidebar() {
                                     <Link
                                         href="/library"
                                         className={clsx(
-                                            'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-xs uppercase tracking-tight group',
+                                            'flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-bold text-sm group',
                                             pathname === '/library'
                                                 ? 'bg-blue-50 text-blue-600'
                                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                         )}
                                     >
                                         <FolderOpen className={clsx("w-5 h-5", pathname === '/library' ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500 transition-colors")} />
-                                        <span>Vault Library</span>
+                                        <span>My Files</span>
                                     </Link>
                                 )}
                             </div>
@@ -156,7 +154,7 @@ export default function Sidebar() {
                                 onClick={() => setPdfExpanded(!pdfExpanded)}
                                 className="flex items-center justify-between w-full px-5 mb-4 group"
                             >
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">PDF Modules</p>
+                                <p className="text-[11px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors">Tools</p>
                                 <ChevronDown
                                     className={clsx(
                                         'w-4 h-4 text-slate-400 transition-transform duration-300 group-hover:text-blue-600',
@@ -171,7 +169,7 @@ export default function Sidebar() {
                                             key={tool.href}
                                             href={tool.href}
                                             className={clsx(
-                                                'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-tight group',
+                                                'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-bold text-sm group',
                                                 pathname === tool.href
                                                     ? 'bg-blue-50 text-blue-600'
                                                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -191,7 +189,7 @@ export default function Sidebar() {
                                     onClick={() => setAiExpanded(!aiExpanded)}
                                     className="flex items-center justify-between w-full px-5 mb-4 group"
                                 >
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">AI Processing</p>
+                                    <p className="text-[11px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors">AI Tools</p>
                                     <ChevronDown
                                         className={clsx(
                                             'w-4 h-4 text-slate-400 transition-transform duration-300 group-hover:text-blue-600',
@@ -206,7 +204,7 @@ export default function Sidebar() {
                                                 key={tool.href}
                                                 href={tool.href}
                                                 className={clsx(
-                                                    'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-tight group',
+                                                    'flex items-center gap-3 px-5 py-2.5 rounded-xl transition-all font-bold text-sm group',
                                                     pathname === tool.href
                                                         ? 'bg-blue-50 text-blue-600'
                                                         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -245,14 +243,14 @@ export default function Sidebar() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-black text-slate-900 truncate tracking-tight">{user.displayName || 'User'}</p>
-                                            <p className="text-[10px] text-blue-600 font-black truncate uppercase tracking-[0.1em]">{user.plan || 'Free'} Member</p>
+                                            <p className="text-[10px] text-blue-600 font-black truncate">{user.plan || 'Free'} Plan</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2.5 pt-2">
                                         <div className="flex justify-between items-end">
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency</span>
-                                            <span className="text-[10px] font-black text-slate-900">
+                                            <span className="text-[10px] font-bold text-slate-400">Storage used</span>
+                                            <span className="text-[10px] font-bold text-slate-900">
                                                 {Math.round(usagePercent)}%
                                             </span>
                                         </div>
@@ -266,7 +264,7 @@ export default function Sidebar() {
                                                 )}
                                             />
                                         </div>
-                                        <p className="text-[9px] text-slate-400 text-center font-black uppercase tracking-tighter">
+                                        <p className="text-[10px] text-slate-400 text-center font-bold">
                                             {formatStorageSize(user.storageUsed || 0)} OF {formatStorageSize(effectiveLimit)}
                                         </p>
                                     </div>
@@ -274,17 +272,17 @@ export default function Sidebar() {
                                     <div className="pt-4 border-t border-slate-200 space-y-1">
                                         <Link
                                             href="/plans"
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest text-slate-600 hover:bg-white hover:text-blue-600 hover:shadow-sm group border border-transparent hover:border-slate-100"
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold text-sm text-slate-600 hover:bg-white hover:text-blue-600 hover:shadow-sm group border border-transparent hover:border-slate-100"
                                         >
                                             <CreditCard className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
                                             <span>Upgrade Plan</span>
                                         </Link>
                                         <button
                                             onClick={signOut}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600 group"
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold text-sm text-rose-500 hover:bg-rose-50 hover:text-rose-600 group"
                                         >
                                             <LogOut className="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" />
-                                            <span>Secure Logout</span>
+                                            <span>Logout</span>
                                         </button>
                                     </div>
                                 </>

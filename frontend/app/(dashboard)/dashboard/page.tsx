@@ -48,25 +48,25 @@ const coreTools = [
         name: 'Merge',
         href: '/tools/merge',
         icon: Merge,
-        description: 'Combine multiple document layers',
+        description: 'Combine multiple PDFs into one',
     },
     {
         name: 'Split',
         href: '/tools/split',
         icon: Scissors,
-        description: 'Divide by page ranges',
+        description: 'Split your PDF into separate files',
     },
     {
         name: 'Compress',
         href: '/tools/compress',
         icon: Minimize2,
-        description: 'Optimize for speed and size',
+        description: 'Reduce file size while keeping quality',
     },
     {
         name: 'Organize',
         href: '/tools/organize',
         icon: Layers,
-        description: 'Rearrange page hierarchy',
+        description: 'Reorder or remove pages',
     },
 ];
 
@@ -75,13 +75,13 @@ const aiIntelligence = [
         name: 'OCR Scanner',
         href: '/ai/ocr',
         icon: FileSearch,
-        description: 'Optical text & data extraction',
+        description: 'Extract text from scanned documents',
     },
     {
         name: 'AI Summarizer',
         href: '/ai/summarize',
         icon: Brain,
-        description: 'Deep semantic document analysis',
+        description: 'Get an AI summary of any document',
     },
 ];
 
@@ -131,17 +131,17 @@ export default function DashboardPage() {
                         <div className="space-y-6 text-center lg:text-left">
                             <motion.div
                                 variants={itemVariants}
-                                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm"
+                                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-[0.2em] shadow-sm"
                             >
                                 <Zap className="w-3.5 h-3.5" />
-                                Ready for Production
+                                Active
                             </motion.div>
                             <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight">
                                 Hello, <br />
                                 <span className="text-blue-600">{user?.displayName?.split(' ')[0] || 'User'}</span>
                             </motion.h1>
                             <motion.p variants={itemVariants} className="text-slate-500 text-lg font-medium max-w-md leading-relaxed">
-                                Professional dashboard initialized. Your operations are secured and your workspace is optimized.
+                                Welcome back! All your tools are ready and your workspace is optimized.
                             </motion.p>
                         </div>
 
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <HardDrive className="w-4 h-4 text-slate-400" />
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Storage Efficiency</span>
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Storage used</span>
                                         </div>
                                         <span className={clsx(
                                             "text-xs font-black",
@@ -178,8 +178,8 @@ export default function DashboardPage() {
 
                                 <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status</p>
-                                        <p className="text-xs font-black text-slate-900 uppercase">Verified {user?.plan || 'Free'}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Plan</p>
+                                        <p className="text-xs font-black text-slate-900 uppercase">{user?.plan || 'Free'} Plan</p>
                                     </div>
                                     <Link
                                         href="/plans"
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200 shadow-sm">
                                 <Clock className="w-5 h-5 text-blue-600" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quick Operations</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quick Tools</h2>
                         </div>
                         <Link href="/tools" className="text-xs font-black text-blue-600 uppercase tracking-widest hover:translate-x-1 transition-transform inline-flex items-center gap-2">
                             Explore All <ArrowRight className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200">
                                 <Grid className="w-5 h-5 text-blue-600" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Document Engine</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">All Tools</h2>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center border border-blue-500 shadow-lg shadow-blue-500/20">
                                 <Sparkles className="w-5 h-5 text-white" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">AI & Labs</h2>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">AI Tools</h2>
                         </div>
 
                         <div className="space-y-5">
@@ -280,7 +280,6 @@ export default function DashboardPage() {
                                             <tool.icon className="w-10 h-10 text-blue-600" />
                                         </div>
                                         <div className="flex-1">
-                                            <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1.5 opacity-60">Neural Engine</div>
                                             <h3 className="text-slate-900 font-black text-2xl mb-1">{tool.name}</h3>
                                             <p className="text-slate-500 text-sm leading-relaxed font-bold">{tool.description}</p>
                                         </div>
@@ -298,8 +297,8 @@ export default function DashboardPage() {
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 opacity-10 rounded-full blur-[80px] group-hover:opacity-20 transition-all duration-1000"></div>
                                 <div className="relative z-10 space-y-6">
                                     <div className="space-y-3">
-                                        <h3 className="text-3xl font-black text-white tracking-tight">Elevate Productivity</h3>
-                                        <p className="text-slate-400 font-medium max-w-xs text-lg">Access unlimited AI bandwidth and high-priority file processing.</p>
+                                        <h3 className="text-3xl font-black text-white tracking-tight">Get more storage</h3>
+                                        <p className="text-slate-400 font-medium max-w-xs text-lg">Upgrade to a paid plan for more storage and priority processing.</p>
                                     </div>
                                     <Link
                                         href="/plans"

@@ -72,14 +72,14 @@ export default function LibraryPage() {
 
     const handlePreview = async (file: LibraryFile) => {
         try {
-            const toastId = toast.loading('Synchronizing preview buffer...');
+            const toastId = toast.loading('Loading preview...');
             const response = await api.get(`/library/download/${file.id}`, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
             setPreviewUrl(url);
             setPreviewFile(file);
             toast.dismiss(toastId);
         } catch (e) {
-            toast.error('Failed to load asset preview');
+            toast.error('Failed to load preview');
         }
     };
 
@@ -113,9 +113,9 @@ export default function LibraryPage() {
 
             if (err.response?.status === 401) {
                 if (!user && !authLoading) router.push('/login');
-                else setError('Vault access expired. Please re-authenticate.');
+                else setError('Session expired. Please log in again.');
             } else {
-                setError(err.response?.data?.error?.message || 'Failed to synchronize vault');
+                setError(err.response?.data?.error?.message || 'Failed to load your files');
             }
             setFiles([]);
             setHasFetched(true);
@@ -150,7 +150,7 @@ export default function LibraryPage() {
 
         for (const file of acceptedFiles) {
             if (file.size > maxFileSize) {
-                toast.error(`${file.name} exceeds quota logic.`, { icon: '⚠️' });
+                toast.error(`${file.name} is too large for your plan.`, { icon: '⚠️' });
                 continue;
             }
 
@@ -167,7 +167,7 @@ export default function LibraryPage() {
         }
 
         if (successCount > 0) {
-            toast.success(`${successCount} Asset(s) secured in Vault`);
+            toast.success(`${successCount} file(s) uploaded to My Files`);
             fetchLibrary();
             useAuthStore.getState().syncStorage();
         }
@@ -186,7 +186,7 @@ export default function LibraryPage() {
             const response = await api.get(`/library/download/${file.id}`, { responseType: 'blob' });
             const blob = new Blob([response.data], { type: 'application/pdf' });
             downloadFile(window.URL.createObjectURL(blob), file.fileName);
-            toast.success('Asset transmission started');
+            toast.success('Download started');
         } catch (error: any) {
             toast.error('Download failed');
         }
@@ -195,12 +195,12 @@ export default function LibraryPage() {
     const handleDelete = async (fileId: string) => {
         try {
             await api.delete(`/library/${fileId}`);
-            toast.success('Asset purged from Cloud Vault');
+            toast.success('File removed');
             setFiles(prev => prev.filter(f => f.id !== fileId));
             setDeleteConfirm(null);
             useAuthStore.getState().syncStorage();
         } catch (error) {
-            toast.error('Purge failed');
+            toast.error('Delete failed');
         }
     };
 
@@ -235,24 +235,24 @@ export default function LibraryPage() {
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest">Global Asset Manager</span>
-                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-600 uppercase tracking-widest">File Manager</span>
+                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
                                     <Shield className="w-3 h-3" />
-                                    Encrypted
+                                    Secure
                                 </div>
                             </div>
-                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Document <span className="text-blue-600">Vault</span></h1>
-                            <p className="text-slate-500 font-bold mt-3 text-lg">Synchronized interface for high-fidelity document assets</p>
+                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">My <span className="text-blue-600">Files</span></h1>
+                            <p className="text-slate-500 font-bold mt-3 text-lg">Manage and access all your documents in one place</p>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4">
                         <button
                             onClick={() => setShowUploadModal(true)}
-                            className="flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30 transition-all font-black uppercase tracking-widest text-sm group"
+                            className="flex items-center justify-center gap-3 px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30 transition-all font-bold uppercase tracking-widest text-sm group"
                         >
                             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-                            Secure Upload
+                            Upload File
                         </button>
                     </div>
                 </div>
@@ -265,7 +265,7 @@ export default function LibraryPage() {
                         </div>
                         <input
                             type="text"
-                            placeholder="Filter vault contents by metadata..."
+                            placeholder="Search your files..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full bg-white border border-slate-200 focus:border-blue-600/50 focus:ring-8 focus:ring-blue-500/5 rounded-2xl py-5 pl-14 pr-6 text-slate-900 placeholder-slate-400 outline-none transition-all font-bold text-sm"
@@ -281,10 +281,10 @@ export default function LibraryPage() {
                             Sort
                         </div>
                         {[
-                            { id: 'createdAt', icon: Clock, label: 'Timeline' },
-                            { id: 'name', icon: SortAsc, label: 'Identity' },
-                            { id: 'size', icon: HardDrive, label: 'Weight' },
-                            { id: 'pages', icon: Hash, label: 'Count' },
+                            { id: 'createdAt', icon: Clock, label: 'Date' },
+                            { id: 'name', icon: SortAsc, label: 'Name' },
+                            { id: 'size', icon: HardDrive, label: 'Size' },
+                            { id: 'pages', icon: Hash, label: 'Pages' },
                         ].map((s) => (
                             <button
                                 key={s.id}
@@ -341,7 +341,7 @@ export default function LibraryPage() {
                                 <Loader2 className="w-20 h-20 animate-spin text-blue-600" />
                                 <div className="absolute inset-0 blur-3xl bg-blue-400/20" />
                             </div>
-                            <p className="text-slate-600 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Syncing Cloud Matrix...</p>
+                            <p className="text-slate-600 font-bold uppercase tracking-[0.3em] text-xs animate-pulse">Loading your files...</p>
                         </motion.div>
                     ) : files.length === 0 ? (
                         <motion.div
@@ -353,11 +353,11 @@ export default function LibraryPage() {
                                 <FileText className="w-14 h-14 text-slate-300" />
                             </div>
                             <div className="space-y-3">
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Vault Matrix Empty</h3>
-                                <p className="text-slate-500 font-bold max-w-sm mx-auto text-lg leading-relaxed">Your secure document repository is offline. Deploy assets to activate workspace.</p>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight">No files found</h3>
+                                <p className="text-slate-500 font-bold max-w-sm mx-auto text-lg leading-relaxed">You haven't uploaded any files yet. Upload a file to get started.</p>
                             </div>
-                            <button onClick={() => setShowUploadModal(true)} className="px-10 py-4 font-black uppercase tracking-widest text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-2xl transition-all border border-blue-100 shadow-sm">
-                                Deploy First Asset
+                            <button onClick={() => setShowUploadModal(true)} className="px-10 py-4 font-bold uppercase tracking-widest text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-2xl transition-all border border-blue-100 shadow-sm">
+                                Upload your first file
                             </button>
                         </motion.div>
                     ) : viewMode === 'grid' ? (
@@ -476,8 +476,8 @@ export default function LibraryPage() {
 
                             <div className="flex items-center justify-between mb-10">
                                 <div className="space-y-2">
-                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Vault Injection</h2>
-                                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest opacity-70">Secure Document Provisioning</p>
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Upload File</h2>
+                                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest opacity-70">Drop your PDFs below to upload them to your account</p>
                                 </div>
                                 <button onClick={() => !isUploading && setShowUploadModal(false)} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-all">
                                     <X className="w-6 h-6" />
@@ -501,7 +501,7 @@ export default function LibraryPage() {
                                                 <Loader2 className="w-24 h-24 animate-spin text-blue-600" />
                                                 <div className="absolute inset-0 blur-3xl bg-blue-400/30" />
                                             </div>
-                                            <p className="text-blue-600 text-xl font-black uppercase tracking-[0.2em] animate-pulse">Encrypting & Storing Assets...</p>
+                                            <p className="text-blue-600 text-xl font-bold uppercase tracking-[0.2em] animate-pulse">Uploading your files...</p>
                                         </>
                                     ) : (
                                         <>
@@ -509,8 +509,8 @@ export default function LibraryPage() {
                                                 <Upload className="w-12 h-12 text-blue-600" />
                                             </div>
                                             <div className="space-y-3">
-                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Source Selection</h3>
-                                                <p className="text-slate-500 font-bold text-base leading-relaxed">Drag documents to the encrypted dropzone or browse local storage.</p>
+                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Select Files</h3>
+                                                <p className="text-slate-500 font-bold text-base leading-relaxed">Drag & drop your PDFs here or click to browse.</p>
                                                 <div className="pt-4 flex items-center justify-center gap-6">
                                                     <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                                         <Shield className="w-4 h-4 text-blue-500" />
@@ -546,11 +546,11 @@ export default function LibraryPage() {
                             <div className="w-20 h-20 rounded-[1.5rem] bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-8 shadow-inner animate-bounce">
                                 <Trash2 className="w-10 h-10 text-rose-500" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Confirm Purge</h2>
-                            <p className="text-slate-500 text-lg font-bold mb-10 leading-relaxed px-2">This asset will be permanently erased from Cloud Vault infrastructure.</p>
+                            <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Confirm Delete</h2>
+                            <p className="text-slate-500 text-lg font-bold mb-10 leading-relaxed px-2">This file will be permanently deleted. This action cannot be undone.</p>
                             <div className="flex flex-col gap-3">
-                                <button onClick={() => handleDelete(deleteConfirm)} className="w-full py-5 rounded-2xl bg-rose-600 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-rose-500/30 hover:bg-rose-700 transition-all">Execute Purge</button>
-                                <button onClick={() => setDeleteConfirm(null)} className="w-full py-5 rounded-2xl bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Abort Task</button>
+                                <button onClick={() => handleDelete(deleteConfirm)} className="w-full py-5 rounded-2xl bg-rose-600 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-rose-500/30 hover:bg-rose-700 transition-all">Delete Now</button>
+                                <button onClick={() => setDeleteConfirm(null)} className="w-full py-5 rounded-2xl bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Cancel</button>
                             </div>
                         </motion.div>
                     </motion.div>

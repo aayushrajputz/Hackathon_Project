@@ -211,7 +211,7 @@ export default function SplitPDFPage() {
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                                     <Scissors className="w-5 h-5 text-blue-600" />
-                                                    Split Settings
+                                                    Split settings
                                                 </h3>
                                                 <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 cursor-help group relative">
                                                     <HelpCircle className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
@@ -222,7 +222,7 @@ export default function SplitPDFPage() {
                                             </div>
 
                                             <div className="space-y-3">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Page Ranges</label>
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pages</label>
                                                 <input
                                                     type="text"
                                                     value={pageRanges}
@@ -258,12 +258,12 @@ export default function SplitPDFPage() {
                                             {isProcessing ? (
                                                 <>
                                                     <Loader2 className="w-6 h-6 animate-spin" />
-                                                    <span>Processing PDF...</span>
+                                                    <span>Splitting...</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <Scissors className="w-6 h-6" />
-                                                    <span>Split PDF</span>
+                                                    <span>Split Now</span>
                                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </>
                                             )}
@@ -284,18 +284,17 @@ export default function SplitPDFPage() {
                             <div className="w-24 h-24 rounded-3xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-6 shadow-inner animate-float">
                                 <CheckCircle className="w-12 h-12 text-emerald-500" />
                             </div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Success!</h2>
-                            <p className="text-slate-600 font-medium mt-3">We've created {result.files.length} new documents for you.</p>
+                            <h2 className="text-4xl font-black tracking-tight">Done!</h2>
+                            <p className="text-slate-600 font-medium mt-3">Your PDF has been successfully split.</p>
 
-                            <div className="mt-10 flex justify-center gap-12 bg-slate-50 border border-slate-100 py-6 px-12 rounded-3xl inline-flex w-auto mx-auto shadow-sm">
-                                <div className="text-center">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Input Pages</p>
-                                    <p className="text-2xl font-black text-slate-900">{result.inputPages}</p>
+                            <div className="grid md:grid-cols-2 gap-6 mt-10">
+                                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-2 shadow-sm text-center">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total pages</p>
+                                    <p className="text-3xl font-black text-slate-700">{result.inputPages}</p>
                                 </div>
-                                <div className="w-px h-12 bg-slate-200"></div>
-                                <div className="text-center">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Files Created</p>
-                                    <p className="text-2xl font-black text-slate-900">{result.files.length}</p>
+                                <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 space-y-2 shadow-sm text-center">
+                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Files split</p>
+                                    <p className="text-3xl font-black text-emerald-600">{result.files.length}</p>
                                 </div>
                             </div>
                         </div>
@@ -348,9 +347,9 @@ export default function SplitPDFPage() {
                         <div className="flex justify-center pt-8 border-t border-slate-200">
                             <button
                                 onClick={handleClear}
-                                className="px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-bold hover:text-blue-600 hover:border-blue-500 transition-all text-xs uppercase tracking-[0.2em] shadow-sm"
+                                className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
                             >
-                                Process New PDF
+                                Start over
                             </button>
                         </div>
                         <SignupBanner />

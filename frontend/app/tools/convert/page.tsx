@@ -57,7 +57,7 @@ const conversionCards: ConversionCard[] = [
     {
         id: 'word-to-pdf',
         title: 'Word to PDF',
-        description: 'Elite conversion for DOCX/DOC formats',
+        description: 'Convert Word documents to PDF',
         inputFormats: ['.doc', '.docx'],
         outputFormat: 'pdf',
         icon: FileText,
@@ -66,7 +66,7 @@ const conversionCards: ConversionCard[] = [
     {
         id: 'excel-to-pdf',
         title: 'Excel to PDF',
-        description: 'Precision table rendering & high-fidelity preservation',
+        description: 'Convert Excel spreadsheets to PDF',
         inputFormats: ['.xls', '.xlsx'],
         outputFormat: 'pdf',
         icon: FileSpreadsheet,
@@ -75,7 +75,7 @@ const conversionCards: ConversionCard[] = [
     {
         id: 'ppt-to-pdf',
         title: 'Slides to PDF',
-        description: 'Retain high-fidelity visuals & slide transitions',
+        description: 'Convert PowerPoint slides to PDF',
         inputFormats: ['.ppt', '.pptx'],
         outputFormat: 'pdf',
         icon: Presentation,
@@ -84,12 +84,12 @@ const conversionCards: ConversionCard[] = [
     {
         id: 'odt-to-pdf',
         title: 'ODT to PDF',
-        description: 'OpenDocument standard conversion for any scale',
+        description: 'Convert ODT files to PDF',
         inputFormats: ['.odt'],
         outputFormat: 'pdf',
         icon: FileCode,
         color: 'bg-blue-600 shadow-blue-500/20',
-    }
+    },
 ];
 
 type JobStatus = 'idle' | 'uploading' | 'queued' | 'processing' | 'completed' | 'failed';
@@ -119,7 +119,7 @@ export default function ConvertPage() {
         });
 
         if (validFiles.length !== acceptedFiles.length) {
-            toast.error(`Invalid format integration rejected. Allowed: ${selectedCard.inputFormats.join(', ')}`);
+            toast.error(`Invalid format. Allowed: ${selectedCard.inputFormats.join(', ')}`);
         }
 
         setFiles(prev => [...prev, ...validFiles]);
@@ -167,10 +167,10 @@ export default function ConvertPage() {
             const { jobId: newJobId } = response.data.data;
             setJobId(newJobId);
             setStatus('queued');
-            toast.success('Conversion pipeline provisioned');
+            toast.success('Starting conversion');
         } catch (err: any) {
             setStatus('failed');
-            setError(err.response?.data?.error?.message || 'Matrix submission failed');
+            setError(err.response?.data?.error?.message || 'Failed to start conversion');
         }
     };
 
@@ -202,7 +202,7 @@ export default function ConvertPage() {
                     }
                 } else if (job.status === 'failed') {
                     setStatus('failed');
-                    setError(job.error || 'Pipeline critical failure');
+                    setError(job.error || 'Conversion failed');
                 }
             } catch (err) {
                 console.error('Diagnostic poll error:', err);
@@ -237,7 +237,7 @@ export default function ConvertPage() {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
         } catch (e) {
-            toast.error('Asset extraction error');
+            toast.error('Failed to download file');
         }
     };
 
@@ -268,20 +268,12 @@ export default function ConvertPage() {
 
             <div className="relative z-10 max-w-7xl mx-auto space-y-16">
                 <div className="text-center space-y-6 max-w-4xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest group cursor-default"
-                    >
-                        <Cpu className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-1000" />
-                        Universal Conversion Layer
-                    </motion.div>
                     <motion.h1
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none"
                     >
-                        Switch <span className="text-blue-600">Architectures</span>
+                        Convert <span className="text-blue-600">Files</span>
                     </motion.h1>
                     <motion.p
                         initial={{ opacity: 0, y: 10 }}
@@ -289,7 +281,7 @@ export default function ConvertPage() {
                         transition={{ delay: 0.1 }}
                         className="text-slate-500 text-lg md:text-xl font-bold max-w-2xl mx-auto leading-relaxed"
                     >
-                        Seamlessly migrate documents across formats with zero metadata loss. Powered by proprietary neural rendering.
+                        Convert your documents to PDF easily.
                     </motion.p>
                 </div>
 
@@ -347,7 +339,7 @@ export default function ConvertPage() {
                                 className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-600 shadow-sm transition-all font-black text-[10px] uppercase tracking-widest group"
                             >
                                 <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                                Back to Control Center
+                                Go back
                             </button>
                             <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20">
                                 <Zap className="w-4 h-4" />
@@ -378,7 +370,7 @@ export default function ConvertPage() {
                                                     <Upload className="w-12 h-12 text-blue-600" />
                                                 </div>
                                                 <div className="space-y-4">
-                                                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">DROP PAYLOAD HERE</h3>
+                                                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">Drop files here</h3>
                                                     <div className="flex items-center justify-center gap-3">
                                                         {selectedCard!.inputFormats.map(ext => (
                                                             <span key={ext} className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:border-blue-200 transition-colors">{ext}</span>
@@ -399,9 +391,9 @@ export default function ConvertPage() {
                                                         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                                                             <History className="w-4 h-4 text-white" />
                                                         </div>
-                                                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Injection Matrix ({files.length} Assets)</h3>
+                                                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Files added ({files.length})</h3>
                                                     </div>
-                                                    <button onClick={handleReset} className="text-[10px] font-black text-rose-500 hover:bg-rose-50 px-4 py-2 rounded-xl transition-all uppercase tracking-widest">Wipe Buffer</button>
+                                                    <button onClick={handleReset} className="text-[10px] font-black text-rose-500 hover:bg-rose-50 px-4 py-2 rounded-xl transition-all uppercase tracking-widest">Clear</button>
                                                 </div>
                                                 <div className="grid gap-4">
                                                     {files.map((file, idx) => (
@@ -415,7 +407,7 @@ export default function ConvertPage() {
                                                                     <div className="flex items-center gap-3 mt-1">
                                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{formatBytes(file.size)}</span>
                                                                         <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
-                                                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">VERIFIED</span>
+                                                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">READY</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -431,7 +423,7 @@ export default function ConvertPage() {
                                                     className="w-full py-7 rounded-[2rem] font-black flex items-center justify-center gap-6 text-white bg-blue-600 shadow-2xl shadow-blue-500/40 hover:bg-blue-700 hover:-translate-y-1 transition-all mt-10 group"
                                                 >
                                                     <RefreshCw className="w-7 h-7 group-hover:rotate-180 transition-transform duration-1000" />
-                                                    <span className="text-base tracking-[0.3em] uppercase">Initialize Pipeline Matrix</span>
+                                                    <span className="text-base tracking-[0.3em] uppercase">Convert Now</span>
                                                     <ArrowRight className="w-6 h-6 group-hover:translate-x-3 transition-transform" />
                                                 </button>
                                             </motion.div>
@@ -455,19 +447,15 @@ export default function ConvertPage() {
                                         <div className="text-center space-y-10 w-full max-w-lg">
                                             <div className="space-y-4">
                                                 <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">
-                                                    {status === 'uploading' ? 'Ingesting Asset' :
-                                                        status === 'queued' ? 'In Pipeline' : 'Mutating Metadata'}
+                                                    {status === 'uploading' ? 'Uploading' :
+                                                        status === 'queued' ? 'Queued' : 'Converting'}
                                                 </h3>
-                                                <div className="flex items-center justify-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 py-2 border border-slate-100 rounded-xl px-4">
-                                                    <Shield className="w-3.5 h-3.5" />
-                                                    Active Encryption Standard
-                                                </div>
                                             </div>
 
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
-                                                    <span>Progression Map</span>
-                                                    <span>{progress}% Matrix Locked</span>
+                                                    <span>Progress</span>
+                                                    <span>{progress}%</span>
                                                 </div>
                                                 <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-50 p-1">
                                                     <motion.div
@@ -491,8 +479,8 @@ export default function ConvertPage() {
                                                 <CheckCircle className="w-14 h-14 text-emerald-500" />
                                             </div>
                                             <div className="space-y-3">
-                                                <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase leading-none">Matrix Sync Locked</h2>
-                                                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Architecture Migrated to {selectedCard?.outputFormat} Standard</p>
+                                                <h2 className="text-6xl font-black tracking-tighter text-slate-900 uppercase leading-none">Done!</h2>
+                                                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Your conversion is complete.</p>
                                             </div>
                                         </div>
 
@@ -502,14 +490,14 @@ export default function ConvertPage() {
                                                 className="w-full py-7 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[2.5rem] flex items-center justify-center gap-4 text-[11px] uppercase tracking-[0.3em] transition-all shadow-2xl shadow-blue-500/40 hover:-translate-y-1"
                                             >
                                                 <Download className="w-7 h-7" />
-                                                <span>EXTRACT ASSET ARCHIVE</span>
+                                                <span>Download Now</span>
                                             </button>
                                             <button
                                                 onClick={() => setIsShareOpen(true)}
                                                 className="w-full py-7 bg-slate-900 text-white font-black rounded-[2.5rem] flex items-center justify-center gap-4 text-[11px] uppercase tracking-[0.3em] transition-all shadow-xl shadow-black/10 hover:bg-black hover:-translate-y-1"
                                             >
                                                 <Share2 className="w-7 h-7 text-blue-400" />
-                                                <span>SYNC TO NETWORK</span>
+                                                <span>Share Link</span>
                                             </button>
                                         </div>
 
@@ -520,7 +508,7 @@ export default function ConvertPage() {
                                                     className="px-10 py-5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3"
                                                 >
                                                     <Eye className="w-4 h-4" />
-                                                    {showPreview ? 'CLOSE VISUAL BUFFER' : 'LAUNCH VISUAL VERIFIER'}
+                                                    {showPreview ? 'Close preview' : 'Preview'}
                                                 </button>
                                             )}
                                             <button
@@ -528,7 +516,7 @@ export default function ConvertPage() {
                                                 className="px-10 py-5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-3"
                                             >
                                                 <History className="w-4 h-4" />
-                                                INITIALIZE NEW JOB
+                                                Start over
                                             </button>
                                         </div>
 
@@ -543,7 +531,7 @@ export default function ConvertPage() {
                                                         <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
                                                             <Monitor className="w-5 h-5 text-white" />
                                                         </div>
-                                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">High-Fid Verification</h3>
+                                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Preview</h3>
                                                     </div>
                                                     <div className="flex items-center gap-5">
                                                         <button
@@ -554,7 +542,7 @@ export default function ConvertPage() {
                                                             <ChevronLeft className="w-6 h-6" />
                                                         </button>
                                                         <span className="text-[11px] font-black text-slate-900 bg-white border border-slate-200 px-6 py-2.5 rounded-2xl uppercase tracking-[0.2em] shadow-smmin-w-[120px] text-center">
-                                                            LAYER {pageNumber} / {numPages || '...'}
+                                                            Page {pageNumber} / {numPages || '...'}
                                                         </span>
                                                         <button
                                                             disabled={numPages ? pageNumber >= numPages : true}
@@ -598,16 +586,16 @@ export default function ConvertPage() {
                                             <XCircle className="w-16 h-16 text-rose-500" />
                                         </div>
                                         <div className="space-y-6">
-                                            <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">PIPELINE CRITICAL FAULT</h3>
+                                            <h3 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Conversion failed</h3>
                                             <div className="bg-rose-50 py-5 px-10 rounded-[2rem] border border-rose-100 inline-block">
-                                                <p className="text-rose-600 font-black font-mono text-sm uppercase tracking-widest">ERROR CODE: {error || 'UNCERTAIN_LOGIC_STATE'}</p>
+                                                <p className="text-rose-600 font-black font-mono text-sm uppercase tracking-widest">ERROR: {error || 'Something went wrong'}</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={handleReset}
                                             className="px-14 py-6 rounded-[2.5rem] bg-slate-900 border border-slate-800 text-white font-black text-[11px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 block mx-auto mt-10 hover:-translate-y-1"
                                         >
-                                            RESTART CONVERSION MATRIX
+                                            Try again
                                         </button>
                                     </motion.div>
                                 )}
@@ -616,9 +604,9 @@ export default function ConvertPage() {
 
                         <div className="grid md:grid-cols-3 gap-8">
                             {[
-                                { icon: Shield, title: 'Safe Protocols', desc: 'Secure Sandbox Mutating' },
-                                { icon: Zap, title: 'Edge Compute', desc: 'Sub-second Matrix Shifting' },
-                                { icon: FileCode, title: 'Semantic Zero', desc: 'Preserving Logic Structures' }
+                                { icon: Shield, title: 'Secure', desc: 'Protected processing' },
+                                { icon: Zap, title: 'Fast', desc: 'Instant results' },
+                                { icon: FileCode, title: 'Accurate', desc: 'Preserving layout' }
                             ].map((feature, i) => (
                                 <div key={i} className="bg-white border border-slate-100 shadow-sm rounded-[2.5rem] p-8 flex items-center gap-6 hover:-translate-y-2 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
                                     <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">

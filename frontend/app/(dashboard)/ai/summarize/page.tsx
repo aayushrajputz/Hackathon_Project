@@ -90,8 +90,8 @@ export default function SummarizePage() {
                             <Brain className="w-10 h-10 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">AI <span className="text-blue-600">Analyze</span></h1>
-                            <p className="text-slate-600 font-medium mt-1">Semantic extraction & smart summarization</p>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Analyze <span className="text-blue-600">Document</span></h1>
+                            <p className="text-slate-600 font-medium mt-1">Extract key info and summarize</p>
                         </div>
                     </motion.div>
 
@@ -130,8 +130,8 @@ export default function SummarizePage() {
                                                 <Upload className="w-10 h-10 text-blue-500" />
                                             </div>
                                             <div className="space-y-2">
-                                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Drop Source PDF</h3>
-                                                <p className="text-slate-500 font-medium text-sm">Target documents up to 10MB</p>
+                                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Drop your PDF here</h3>
+                                                <p className="text-slate-500 font-medium text-sm">PDFs up to 10MB</p>
                                             </div>
                                         </div>
                                     ) : (
@@ -153,7 +153,7 @@ export default function SummarizePage() {
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <Sparkles className="w-4 h-4 text-blue-600" />
-                                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Detail Strategy</p>
+                                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Summary length</p>
                                             </div>
                                             <div className="grid grid-cols-3 gap-4">
                                                 {lengthOptions.map((option) => (
@@ -190,12 +190,12 @@ export default function SummarizePage() {
                                             {isProcessing ? (
                                                 <>
                                                     <Loader2 className="w-6 h-6 animate-spin" />
-                                                    <span>Synthesizing Document...</span>
+                                                    <span>Analyzing document...</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <Brain className="w-6 h-6" />
-                                                    <span>Analyze & Summarize</span>
+                                                    <span>Summarize Now</span>
                                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </>
                                             )}
@@ -214,10 +214,10 @@ export default function SummarizePage() {
                                 <div className="space-y-3">
                                     <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                         <Zap className="w-5 h-5 text-blue-600" />
-                                        Neural Analysis
+                                        Analysis
                                     </h3>
                                     <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                        Our AI reads and understands context, extracting core semantics while ignoring noise.
+                                        Our AI reads and understands context, extracting key points from your file.
                                     </p>
                                 </div>
 
@@ -225,13 +225,13 @@ export default function SummarizePage() {
                                     <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Target className="w-4 h-4 text-blue-600" />
-                                            <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Accuracy</p>
+                                            <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Precision</p>
                                         </div>
-                                        <p className="text-xs text-blue-700 font-bold">Context-aware semantic mapping</p>
+                                        <p className="text-xs text-blue-700 font-bold">High precision extraction</p>
                                     </div>
                                     <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Indexing</p>
-                                        <p className="text-xs text-slate-600 font-medium font-bold uppercase tracking-tight">Autogenerated tags & key points</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</p>
+                                        <p className="text-xs text-slate-600 font-medium font-bold uppercase tracking-tight">Smart tags & key points</p>
                                     </div>
                                 </div>
 
@@ -241,8 +241,8 @@ export default function SummarizePage() {
                                             <FileText className="w-6 h-6 text-blue-400" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-slate-900 tracking-widest uppercase tracking-widest">Engine ready</p>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Verified for PDF/A</p>
+                                            <p className="text-[10px] font-black text-slate-900 tracking-widest uppercase tracking-widest">READY</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">System Status: Active</p>
                                         </div>
                                     </div>
                                 </div>
@@ -262,7 +262,7 @@ export default function SummarizePage() {
                                         <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                                             <Sparkles className="w-8 h-8 text-white" />
                                         </div>
-                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Executive Summary</h2>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Summary</h2>
                                     </div>
                                     <button
                                         onClick={handleCopy}
@@ -283,7 +283,7 @@ export default function SummarizePage() {
                                 <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm p-10">
                                     <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
                                         <Target className="w-6 h-6 text-blue-600" />
-                                        Strategic Key Points
+                                        Key points
                                     </h3>
                                     <div className="grid gap-4">
                                         {result.keyPoints.map((point: string, index: number) => (
@@ -308,7 +308,7 @@ export default function SummarizePage() {
                         <div className="lg:col-span-1 space-y-8">
                             <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 space-y-8 shadow-sm">
                                 <div>
-                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Neural Tags</h3>
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Tags</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {result.topics?.map((topic: string, i: number) => (
                                             <span key={i} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-[10px] font-black border border-blue-100 uppercase tracking-tight">
@@ -319,7 +319,7 @@ export default function SummarizePage() {
                                 </div>
 
                                 <div className="pt-8 border-t border-slate-100">
-                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Document Pulse</h3>
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Details</h3>
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
                                             <span className="text-xs font-bold text-slate-500">Words</span>
@@ -327,7 +327,8 @@ export default function SummarizePage() {
                                         </div>
                                         <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
                                             <span className="text-xs font-bold text-slate-500">Efficiency</span>
-                                            <span className="text-xs font-black text-blue-600">Optimal</span>
+                                            <span className="text-xs font-bold text-slate-500">Status</span>
+                                            <span className="text-xs font-black text-blue-600">Complete</span>
                                         </div>
                                     </div>
                                 </div>
@@ -336,7 +337,7 @@ export default function SummarizePage() {
                                     onClick={handleReset}
                                     className="w-full py-5 rounded-2xl bg-white border border-slate-200 text-slate-400 font-bold hover:text-blue-600 hover:border-blue-600 transition-all uppercase text-[10px] tracking-widest shadow-sm"
                                 >
-                                    Analyze New Source
+                                    Apply to New File
                                 </button>
                             </div>
                         </div>

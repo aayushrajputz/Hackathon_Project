@@ -184,14 +184,14 @@ export default function IntelligentRedactionPage() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2.5 mb-2">
-                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest">Neural Security Matrix</span>
+                                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase tracking-widest">Security settings</span>
                                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
                                     <Zap className="w-3.5 h-3.5" />
                                     Real-time
                                 </div>
                             </div>
-                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">AI <span className="text-blue-600">Redactor</span></h1>
-                            <p className="text-slate-500 font-bold mt-2 text-lg">Intelligent deep-masking for confidential assets</p>
+                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Hide <span className="text-blue-600">Info</span></h1>
+                            <p className="text-slate-500 font-bold mt-2 text-lg">Securely hide private details from your files</p>
                         </div>
                     </motion.div>
 
@@ -202,7 +202,7 @@ export default function IntelligentRedactionPage() {
                             onClick={handleReset}
                             className="px-8 py-4 bg-white border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
                         >
-                            Process New Asset
+                            New file
                         </motion.button>
                     )}
                 </div>
@@ -243,8 +243,8 @@ export default function IntelligentRedactionPage() {
                                                     <Search className="w-10 h-10 text-blue-600" />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Injection Dropzone</h3>
-                                                    <p className="text-slate-500 font-bold max-w-sm">Drop your PDF for neural scanning or click to browse local storage.</p>
+                                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Drop file here</h3>
+                                                    <p className="text-slate-500 font-bold max-w-sm">Drop your PDF for scanning or click to browse local storage.</p>
                                                 </div>
                                             </>
                                         )}
@@ -257,7 +257,7 @@ export default function IntelligentRedactionPage() {
                                             <Sparkles className="w-5 h-5 text-blue-600" />
                                         </div>
                                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                                            SELECT PROTECTION RULES
+                                            SELECT INFO TO HIDE
                                         </h3>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -312,8 +312,8 @@ export default function IntelligentRedactionPage() {
                                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/20 rounded-full blur-[60px] -z-10"></div>
 
                                 <div className="space-y-2">
-                                    <h3 className="text-white text-2xl font-black tracking-tight">Deployment</h3>
-                                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Security Configuration</p>
+                                    <h3 className="text-white text-2xl font-black tracking-tight">Settings</h3>
+                                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Configuration</p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -330,7 +330,7 @@ export default function IntelligentRedactionPage() {
                                     <div className="p-4 rounded-xl bg-blue-600/10 border border-blue-500/20 flex gap-4">
                                         <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
                                         <p className="text-[10px] font-bold text-blue-200 leading-relaxed uppercase tracking-tight">
-                                            Neural masking generates a redacted clone. Your original asset remains untouched on local storage.
+                                            Our system generates a secure clone. Your original file remains untouched.
                                         </p>
                                     </div>
                                 </div>
@@ -353,7 +353,7 @@ export default function IntelligentRedactionPage() {
                                     ) : (
                                         <>
                                             <Shield className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                            <span>Execute Redaction</span>
+                                            <span>Hide Now</span>
                                             <ArrowRight className="w-4 h-4 opacity-50 group-hover:translate-x-1 group-hover:opacity-100 transition-all" />
                                         </>
                                     )}
@@ -386,9 +386,9 @@ export default function IntelligentRedactionPage() {
                                         <ShieldCheck className="w-7 h-7 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Neural Mask Output</h3>
+                                        <h3 className="text-lg font-black text-slate-900 tracking-tight">Secure Output</h3>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-2 py-0.5 rounded-md">{result.maskedCount} Entities Cleansed</span>
+                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-2 py-0.5 rounded-md">{result.maskedCount} Items hidden</span>
                                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified Secure</span>
                                         </div>
@@ -400,7 +400,7 @@ export default function IntelligentRedactionPage() {
                                         className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center gap-3 shadow-lg shadow-black/10"
                                     >
                                         {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                                        <span>{copied ? 'Captured' : 'Capture Buffer'}</span>
+                                        <span>{copied ? 'Copied' : 'Copy result'}</span>
                                     </button>
                                     <button
                                         onClick={handleReset}

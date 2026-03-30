@@ -150,7 +150,7 @@ export default function MergePDFPage() {
                             className="px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 hover:bg-rose-50 border border-slate-200 bg-white transition-all flex items-center gap-3 shadow-sm"
                         >
                             <Trash2 className="w-4 h-4" />
-                            Purge Workspace
+                            Reset
                         </motion.button>
                     )}
                 </div>
@@ -176,8 +176,8 @@ export default function MergePDFPage() {
                                             <Upload className="w-10 h-10 text-blue-600" />
                                         </div>
                                         <div className="space-y-3">
-                                            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">Add Files</h3>
-                                            <p className="text-slate-400 font-bold text-[10px] uppercase leading-relaxed tracking-widest">Drag and drop PDFs to start merging</p>
+                                            <h3 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Add Files</h3>
+                                            <p className="text-slate-400 font-medium text-sm leading-relaxed">Drag & drop your PDFs here</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -185,7 +185,7 @@ export default function MergePDFPage() {
                                         <div className="w-16 h-16 rounded-[1.25rem] bg-white border border-slate-200 shadow-md flex items-center justify-center mb-4">
                                             <Upload className="w-7 h-7 text-blue-600" />
                                         </div>
-                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Synch Additional Assets</span>
+                                        <span className="text-xs font-bold text-blue-600">Add more files</span>
                                     </div>
                                 )}
                             </div>
@@ -194,10 +194,10 @@ export default function MergePDFPage() {
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between px-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest shadow-xl">
-                                                Active Layer Stack
+                                            <div className="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-[10px] font-bold shadow-xl">
+                                                Files added
                                             </div>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Drag to reorder sequence</span>
+                                            <span className="text-xs font-medium text-slate-400">Drag to reorder</span>
                                         </div>
                                     </div>
 
@@ -227,9 +227,9 @@ export default function MergePDFPage() {
                                                         {item.file.name}
                                                     </p>
                                                     <div className="flex items-center gap-3 mt-1">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{formatBytes(item.file.size)}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{formatBytes(item.file.size)}</span>
                                                         <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
-                                                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">SOURCE_OK</span>
+                                                        <span className="text-[10px] font-bold text-blue-600">Ready</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-6">
@@ -266,26 +266,22 @@ export default function MergePDFPage() {
                                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
                                             <Database className="w-6 h-6 text-blue-400" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-white tracking-tight leading-none uppercase">Merge Options</h3>
+                                        <h3 className="text-2xl font-black text-white tracking-tight leading-none">Options</h3>
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Secure processing enabled</p>
+                                    <p className="text-[10px] font-bold text-slate-500 px-1">Secure processing enabled</p>
                                 </div>
 
                                 <div className="flex-1 space-y-8">
                                     <div className="p-8 rounded-[2rem] bg-white/5 border border-white/10 space-y-4">
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                            <span className="text-slate-500">Linked Assets</span>
-                                            <span className="text-blue-400 font-black">{files.length} NODES</span>
+                                            <span className="text-slate-500">Files added</span>
+                                            <span className="text-blue-400 font-black">{files.length} files</span>
                                         </div>
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                            <span className="text-slate-500">Payload Size</span>
+                                            <span className="text-slate-500">Total size</span>
                                             <span className="text-blue-400 font-black">
                                                 {formatBytes(files.reduce((acc, f) => acc + f.file.size, 0))}
                                             </span>
-                                        </div>
-                                        <div className="pt-4 border-t border-white/5 flex items-center gap-3">
-                                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Verified Integrity Layer</span>
                                         </div>
                                     </div>
 
@@ -316,15 +312,15 @@ export default function MergePDFPage() {
                                         ) : (
                                             <>
                                                 <ZapIcon className="w-6 h-6 group-hover:scale-125 transition-transform" />
-                                                <span className="text-xs uppercase tracking-widest">Merge PDFs</span>
+                                                <span className="text-xs uppercase tracking-widest">Merge Now</span>
                                                 <ArrowUpRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                                             </>
                                         )}
                                     </button>
 
                                     {files.length === 1 && (
-                                        <p className="text-center text-[10px] text-rose-500 font-black uppercase tracking-[0.3em] animate-pulse">
-                                            Add Min. 2 Nodes
+                                        <p className="text-center text-[10px] text-rose-500 font-bold uppercase tracking-[0.3em] animate-pulse">
+                                            Add at least 2 files
                                         </p>
                                     )}
                                 </div>
@@ -344,22 +340,22 @@ export default function MergePDFPage() {
                                 <div className="w-32 h-32 rounded-[3.5rem] bg-blue-600 shadow-2xl shadow-blue-500/30 flex items-center justify-center mx-auto mb-10 border border-white/20 animate-in zoom-in duration-1000">
                                     <CheckCircle className="w-16 h-16 text-white" />
                                 </div>
-                                <h1 className="text-6xl font-black tracking-tighter text-slate-900 leading-none">Files <span className="text-blue-600">Combined</span></h1>
+                                <h1 className="text-6xl font-black tracking-tighter text-slate-900 leading-none">Done!</h1>
                                 <p className="text-slate-500 font-bold text-lg max-w-sm mx-auto leading-relaxed">Your documents have been merged into a single PDF.</p>
                             </div>
 
                             <div className="bg-slate-50 border border-slate-100 rounded-[3rem] p-10 grid grid-cols-3 gap-8 shadow-inner">
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nodes Unified</p>
-                                    <p className="text-3xl font-black text-slate-900 text-center uppercase tracking-tighter">{result.inputFiles} FILES</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Files merged</p>
+                                    <p className="text-3xl font-black text-slate-900 text-center tracking-tighter">{result.inputFiles} files</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Layer Count</p>
-                                    <p className="text-3xl font-black text-blue-600 text-center uppercase tracking-tighter">{result.pageCount} PGS</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Total pages</p>
+                                    <p className="text-3xl font-black text-blue-600 text-center tracking-tighter">{result.pageCount} pages</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Asset Size</p>
-                                    <p className="text-3xl font-black text-slate-900 text-center uppercase tracking-tighter">{formatBytes(result.size || 0)}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">File size</p>
+                                    <p className="text-3xl font-black text-slate-900 text-center tracking-tighter">{formatBytes(result.size || 0)}</p>
                                 </div>
                             </div>
 
@@ -383,9 +379,9 @@ export default function MergePDFPage() {
                             <div className="pt-8 border-t border-slate-100">
                                 <button
                                     onClick={clearAll}
-                                    className="px-10 py-4 rounded-xl text-[10px] font-black text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all uppercase tracking-[0.4em]"
+                                    className="px-10 py-4 rounded-xl text-[10px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all uppercase tracking-[0.4em]"
                                 >
-                                    Initialize New Sequence
+                                    Start over
                                 </button>
                             </div>
                         </div>

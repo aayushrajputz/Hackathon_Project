@@ -26,9 +26,9 @@ import SignupBanner from '@/components/tools/SignupBanner';
 type QualityLevel = 'low' | 'medium' | 'high';
 
 const qualityOptions: { value: QualityLevel; label: string; description: string; reduction: string; icon: any }[] = [
-    { value: 'high', label: 'Pro Quality', description: 'Maximum detail, light compression', reduction: '10-20%', icon: Sparkles },
+    { value: 'high', label: 'High quality', description: 'Maximum detail, light compression', reduction: '10-20%', icon: Sparkles },
     { value: 'medium', label: 'Balanced', description: 'Recommended for most users', reduction: '30-50%', icon: Minimize2 },
-    { value: 'low', label: 'Turbo Saver', description: 'Smallest size, standard quality', reduction: '50-80%', icon: Zap },
+    { value: 'low', label: 'Smallest size', description: 'Smallest size, standard quality', reduction: '50-80%', icon: Zap },
 ];
 
 export default function CompressPDFPage() {
@@ -197,9 +197,9 @@ export default function CompressPDFPage() {
                                 <div className="space-y-2">
                                     <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                         <Minimize2 className="w-5 h-5 text-blue-600" />
-                                        Compression Settings
+                                        Quality
                                     </h3>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Select Strength</p>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Select strength</p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -254,7 +254,7 @@ export default function CompressPDFPage() {
                                     ) : (
                                         <>
                                             <Minimize2 className="w-6 h-6" />
-                                            <span>Compress Document</span>
+                                            <span>Compress Now</span>
                                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}
@@ -275,17 +275,17 @@ export default function CompressPDFPage() {
                                 <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-6 border border-emerald-100 shadow-inner animate-float">
                                     <CheckCircle className="w-12 h-12 text-emerald-500" />
                                 </div>
-                                <h2 className="text-4xl font-black tracking-tight">Successfully Compressed</h2>
+                                <h2 className="text-4xl font-black tracking-tight">Done!</h2>
                                 <p className="text-slate-600 font-medium mt-3">We saved <span className="text-emerald-600 font-bold">{result.reduction}</span> of disk space</p>
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-6">
-                                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-2 shadow-sm">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Before</p>
+                                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-2 shadow-sm text-center">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Original size</p>
                                     <p className="text-3xl font-black text-slate-700">{formatBytes(result.originalSize)}</p>
                                 </div>
-                                <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 space-y-2 shadow-sm">
-                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">After</p>
+                                <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 space-y-2 shadow-sm text-center">
+                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">New size</p>
                                     <p className="text-3xl font-black text-emerald-600">{formatBytes(result.compressedSize)}</p>
                                 </div>
                             </div>
@@ -296,14 +296,14 @@ export default function CompressPDFPage() {
                                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-md shadow-emerald-500/20"
                                 >
                                     <Download className="w-6 h-6" />
-                                    <span>Download Optimized</span>
+                                    <span>Download Now</span>
                                 </button>
                                 <button
                                     onClick={() => setShareModalOpen(true)}
                                     className="w-full py-4 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-sm"
                                 >
                                     <Share2 className="w-5 h-5" />
-                                    <span>Sync & Share</span>
+                                    <span>Share</span>
                                 </button>
                             </div>
 
@@ -312,7 +312,7 @@ export default function CompressPDFPage() {
                                     onClick={handleClear}
                                     className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
                                 >
-                                    Process Another PDF
+                                    Start over
                                 </button>
                             </div>
                         </div>

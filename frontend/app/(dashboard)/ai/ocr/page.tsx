@@ -82,8 +82,8 @@ export default function OCRExtractPage() {
                             <ScanText className="w-10 h-10 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">OCR <span className="text-blue-600">Scanner</span></h1>
-                            <p className="text-slate-600 font-medium mt-1">AI-powered neural text recognition</p>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Extract <span className="text-blue-600">Text</span></h1>
+                            <p className="text-slate-600 font-medium mt-1">Get text from images and PDFs</p>
                         </div>
                     </motion.div>
 
@@ -122,7 +122,7 @@ export default function OCRExtractPage() {
                                                 <Upload className="w-10 h-10 text-blue-500" />
                                             </div>
                                             <div className="space-y-2">
-                                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select Scanned Document</h3>
+                                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select file</h3>
                                                 <p className="text-slate-500 font-medium text-sm">PNG, JPG or PDF up to 10MB</p>
                                             </div>
                                         </div>
@@ -149,12 +149,12 @@ export default function OCRExtractPage() {
                                         {isProcessing ? (
                                             <>
                                                 <Loader2 className="w-6 h-6 animate-spin" />
-                                                <span>Running Intelligence...</span>
+                                                <span>Extracting text...</span>
                                             </>
                                         ) : (
                                             <>
                                                 <ScanText className="w-6 h-6" />
-                                                <span>Extract Text Layer</span>
+                                                <span>Extract Now</span>
                                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                             </>
                                         )}
@@ -172,10 +172,10 @@ export default function OCRExtractPage() {
                                 <div className="space-y-3">
                                     <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                         <Zap className="w-5 h-5 text-blue-600" />
-                                        Advanced Labs
+                                        Settings
                                     </h3>
                                     <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                        Our neural engine performs pixel-level analysis to handle complex layouts and rotations.
+                                        Our system performs high-level analysis to handle complex layouts and rotations.
                                     </p>
                                 </div>
 
@@ -199,7 +199,7 @@ export default function OCRExtractPage() {
                                             <CheckCircle className="w-6 h-6 text-emerald-400" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-slate-900 tracking-widest">NEURAL READY</p>
+                                            <p className="text-[10px] font-black text-slate-900 tracking-widest">READY</p>
                                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">System Status: Active</p>
                                         </div>
                                     </div>
@@ -220,7 +220,7 @@ export default function OCRExtractPage() {
                                         <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Scan Complete</h2>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Extraction complete</h2>
                                         <p className="text-sm font-bold text-slate-500">{result.wordCount || 0} Words Identified</p>
                                     </div>
                                 </div>
@@ -233,7 +233,7 @@ export default function OCRExtractPage() {
                                         )}
                                     >
                                         {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                                        {copied ? 'Copied' : 'Copy All Text'}
+                                        {copied ? 'Copied' : 'Copy text'}
                                     </button>
                                 </div>
                             </div>
