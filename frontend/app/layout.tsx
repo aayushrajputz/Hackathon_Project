@@ -3,7 +3,11 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+    subsets: ['latin'],
+    weight: ['400', '500', '700'],
+    display: 'swap',
+});
 
 export const metadata: Metadata = {
     title: 'BinaryPDF - AI-Powered PDF Toolkit',
