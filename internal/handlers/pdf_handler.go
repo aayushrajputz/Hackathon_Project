@@ -35,18 +35,16 @@ func NewPDFHandler(pdfService *services.PDFService, storageService *services.Sto
 
 func (h *PDFHandler) checkFileSize(c *gin.Context, size int64) bool {
 	userID, exists := middleware.GetUserID(c)
-	if !exists {
-		utils.Unauthorized(c, "Unauthorized")
-		return false
+
+	var userPlan string = "free"
+	if exists {
+		user, err := h.userService.GetUserByFirebaseUID(context.Background(), userID)
+		if err == nil {
+			userPlan = user.Plan
+		}
 	}
 
-	user, err := h.userService.GetUserByFirebaseUID(context.Background(), userID)
-	if err != nil {
-		utils.InternalServerError(c, "Failed to fetch user limits")
-		return false
-	}
-
-	limits, ok := config.Plans[user.Plan]
+	limits, ok := config.Plans[userPlan]
 	if !ok {
 		limits = config.Plans["free"]
 	}
@@ -54,7 +52,7 @@ func (h *PDFHandler) checkFileSize(c *gin.Context, size int64) bool {
 	if size > limits.MaxFileSize {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error":   "File too large",
-			"message": fmt.Sprintf("Your current plan (%s) allows files up to %d MB. Please upgrade to process larger files.", user.Plan, limits.MaxFileSize/(1024*1024)),
+			"message": fmt.Sprintf("The file is too large. The free limit is %d MB. Please login or upgrade to process larger files.", limits.MaxFileSize/(1024*1024)),
 			"code":    "PLAN_LIMIT_EXCEEDED",
 		})
 		return false

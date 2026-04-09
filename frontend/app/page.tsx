@@ -294,11 +294,10 @@ export default function HomePage() {
                     </Link>
 
                     <div className="flex gap-12">
-                        {['Security', 'Privacy', 'Status', 'API'].map((item) => (
-                            <Link key={item} href="/" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
-                                {item}
-                            </Link>
-                        ))}
+                        <Link href="/security" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Security</Link>
+                        <Link href="/privacy" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Privacy</Link>
+                        <Link href="/status" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Status</Link>
+                        <Link href="/api-docs" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">API</Link>
                     </div>
 
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">

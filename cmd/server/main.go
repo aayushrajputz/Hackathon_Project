@@ -131,7 +131,7 @@ func main() {
 	{
 		// Register routes
 		authHandler.RegisterRoutes(v1, authMiddleware)
-		pdfHandler.RegisterRoutes(v1, authMiddleware)
+		pdfHandler.RegisterRoutes(v1, optionalAuthMiddleware)
 		aiHandler.RegisterRoutes(v1, authMiddleware)
 		storageHandler.RegisterRoutes(v1, authMiddleware, optionalAuthMiddleware)
 		libraryHandler.RegisterRoutes(v1, authMiddleware, optionalAuthMiddleware)
